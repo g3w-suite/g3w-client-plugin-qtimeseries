@@ -1,0 +1,29 @@
+{
+  "name": "qtimeseries",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "watch": "../../../node_modules/.bin/gulp watch",
+    "build": "../../../node_modules/.bin/gulp default"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/g3w-suite/g3w-client-plugin-qtimeseries.git"
+  },
+  "keywords": [
+    "qtimeseries",
+    "plugin"
+  ],
+  "author": "Francesco Boccacci(G3W)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/g3w-suite/g3w-client-plugin-qtimeseries.gitissue"
+  },
+  "homepage": "https://github.com/g3w-suite/g3w-client-plugin-qtimeseries.git#readme"
+}
