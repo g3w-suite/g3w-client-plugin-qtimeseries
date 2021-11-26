@@ -23,18 +23,21 @@ function PluginService(){
       layer.wmsname = projectLayer.getWMSLayerName();
       layer.name = projectLayer.getName();
       layer.timed = false; // used to check which layer is timed request
-      layer.current = i === 0; // set current layer at beginning
       if (layer.type === 'raster') {
         layer.options = await XHR.get({
           url: `/qtimeseries/api/raster/serie/${this.project.getId()}/${layer.id}`
         });
-        layer.options.format = 'YYYY-MM-DD'
+        layer.options.format = 'YYYY-MM-DD';
+        layer.options.stepunit = 'days';
       }
     }
 
     this.state = {
       loading: false,
-      layers
+      layers,
+      panel: {
+        open:false
+      }
     };
     this.emit('ready');
   };
@@ -45,13 +48,12 @@ function PluginService(){
    * @param date
    * @returns {Promise<unknown>}
    */
-  this.getTimeLayer = function({layerId, date}={}){
+  this.getTimeLayer = function({layer, date}={}){
     return new Promise((resolve, reject) =>{
-      const layer = this.config.layers.find(layer => layer.id === layerId);
-      layer.timed = true;
-      const projectLayer = this.project.getLayerById(layerId);
+      const {id} = layer;
+      const projectLayer = this.project.getLayerById(id);
       projectLayer.setChecked(true);
-      const mapLayerToUpdate = this.mapService.getMapLayerByLayerId(layerId);
+      const mapLayerToUpdate = this.mapService.getMapLayerByLayerId(id);
       mapLayerToUpdate.once('loadend', resolve);
       if (layer.type === 'raster'){
         const index = layer.options.dates.findIndex(_date => date ===_date);
@@ -62,7 +64,7 @@ function PluginService(){
             [WMS_PARAMETER[layer.type]]: `${layer.wmsname},${index}` // in case of raster layer
           });
         }
-      }  else {
+      } else {
         this.mapService.updateMapLayer(mapLayerToUpdate, {
           force: false,
           [WMS_PARAMETER[layer.type]]: `${layer.wmsname}:"${layer.options.field}"  = '${date}'` // in case of vector layer
@@ -78,7 +80,6 @@ function PluginService(){
         force: false,
         [WMS_PARAMETER[layer.type]]: undefined
       });
-      layer.timed = false;
     }
   };
 
@@ -86,11 +87,7 @@ function PluginService(){
    * Method on open time series Panel
    */
   this.open = function(){
-    const layer = this.state.layers.find(layer => layer.current);
-    layer.start_date && this.getTimeLayer({
-      layerId: layer.id,
-      date: layer.start_date
-    })
+    this.state.panel.open = true;
   };
 
   /**
@@ -99,6 +96,7 @@ function PluginService(){
   this.close = function(){
     const layer = this.state.layers.find(layer => layer.timed);
     layer && this.resetTimeLayer(layer);
+    this.state.panel.open = false;
   };
 
   /**

@@ -1,6 +1,7 @@
 export default {
   it: {
     title: "Serie Temporali",
+    current_date: 'Data Corrente',
     steps: 'Passi',
     step: 'Passo',
     startdate:"Data Inizio",
@@ -17,6 +18,7 @@ export default {
   },
   en: {
     title: "Time Series",
+    current_date: 'Current Date',
     steps: 'Steps',
     step: 'Step',
     startdate:"Start Date",
@@ -33,6 +35,7 @@ export default {
   },
   fi: {
     title: "Time Series",
+    current_date: 'Current Date',
     steps: 'Steps',
     step: 'Step',
     startdate:"Start Date",
@@ -49,6 +52,7 @@ export default {
   },
   se: {
     title: "Time Series",
+    current_date: 'Current Date',
     steps: 'Steps',
     step: 'Step',
     startdate:"Start Date",
@@ -65,6 +69,7 @@ export default {
   },
   fr: {
     title: "Time Series",
+    current_date: 'Current Date',
     steps: 'Steps',
     step: 'Step',
     startdate:"Start Date",

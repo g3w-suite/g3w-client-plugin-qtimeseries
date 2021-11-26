@@ -1,23 +1,43 @@
 <ul id="g3w_raster_timeseries_content" class="treeview-menu" style="position:relative; padding: 10px;color:#FFFFFF">
   <li>
-    <form v-disabled="status === 1">
+    <div style="display: flex; justify-content: space-between;  font-weight: bold; align-items: baseline; border-bottom: 1px solid white;margin-bottom: 3px;">
+      <span v-t-plugin="'qtimeseries.current_date'"></span>
+      <div v-show="currentLayerDateTime" style="font-size: 1.2em; align-items: center">{{ currentLayerDateTime }}</div>
+    </div>
+    <form v-disabled="status !== 0">
       <label style="display: block">Layer</label>
       <select class="form-control" id="timeseriesrasterlayer" v-select2="'current_layer_index'" :search="false">
         <option v-for="(layer, index) in layers" :value="index" :key="layer.id">{{layer.name}}</option>
       </select>
-      <datetime :label="'plugins.qtimeseries.startdate'" :minDate="layer.start_date" :maxDate="layer.end_date" :type="'datetime'" :value="layer.start_date" @change="changeStartDateTime"></datetime>
-      <datetime :label="'plugins.qtimeseries.enddate'" :minDate="layer.start_date" :maxDate="layer.end_date" :type="'datetime'" :value="layer.end_date" @change="changeEndDateTime"></datetime>
-      <label v-t-plugin="'qtimeseries.step'"></label>
+      <datetime :label="'plugins.qtimeseries.startdate'" :enabledDates="layer.options.dates" :minDate="layerMinDate" :maxDate="layerMaxDate" :type="'datetime'" :value="layer.start_date" @change="changeStartDateTime"></datetime>
+      <datetime :label="'plugins.qtimeseries.enddate'" :enabledDates="layer.options.dates" :minDate="layerMinDate" :maxDate="layerMaxDate" :type="'datetime'" :value="layer.end_date" @change="changeEndDateTime"></datetime>
+      <label v-t-plugin:pre="'qtimeseries.step'">[<span v-t-plugin="`qtimeseries.stepsunit.${layer.options.stepunit}`"></span> ]</label>
       <input class="form-control" type="number" :min="range.min" :max="range.max" v-model="step">
-      <label style="display: block" v-t-plugin="'qtimeseries.stepsunit.label'"></label>
-      <select class="form-control" v-select2="'stepunit'" :value="stepunit" :search="false">
-        <option v-for="unit in stepunits" :key="unit" :value="unit" v-t-plugin="`qtimeseries.stepsunit.${unit}`"></option>
-      </select>
-      <range label="plugins.qtimeseries.steps" :max="range.max" :value="range.value" :min="range.min" ref="rangecomponent"></range>
+      <range label="plugins.qtimeseries.steps" :max="range.max" :value="range.value" :min="range.min" ref="rangecomponent" @change-range="changeRangeStep"></range>
     </form>
-    <button v-disabled="disablerun" id="g3w-run-raster-timeseries" style="margin-top: 10px" class="sidebar-button skin-button btn btn-block" @click.stop="click">
-      <span :class="g3wtemplate.getFontClass(icon)" style="color: #FFFFFF"></span>
-    </button>
+    <div style="display: flex; justify-content: space-between; margin-top: 10px" >
+      <button class="sidebar-button skin-button btn btn-block" style="margin: 2px;" @click.stop="fastBackwardForward(-1)">
+        <span :class="g3wtemplate.getFontClass('fast-backward')"></span>
+      </button>
+      <button class="sidebar-button skin-button btn btn-block" style="margin: 2px;" @click.stop="stepBackwardForward(-1)">
+        <span :class="g3wtemplate.getFontClass('step-backward')" style="color: #FFFFFF;"></span>
+      </button>
+      <button class="sidebar-button skin-button btn btn-block" :class="{toggled: status === -1}" style="margin: 2px;" @click.stop="run(-1)">
+        <span :class="g3wtemplate.getFontClass('run')" style="color: #FFFFFF; transform: rotate(180deg)"></span>
+      </button>
+      <button class="sidebar-button skin-button btn btn-block" :class="{toggled: status === 0}" style="margin: 2px;" @click.stop="pause">
+        <span :class="g3wtemplate.getFontClass('pause')" style="color: #FFFFFF"></span>
+      </button>
+      <button class="sidebar-button skin-button btn btn-block" :class="{toggled: status === 1}" style="margin: 2px;" @click.stop="run(1)">
+        <span :class="g3wtemplate.getFontClass('run')" style="color: #FFFFFF"></span>
+      </button>
+      <button class="sidebar-button skin-button btn btn-block" style="margin: 2px;" @click.stop="stepBackwardForward(1)">
+        <span :class="g3wtemplate.getFontClass('step-forward')" style="color: #FFFFFF"></span>
+      </button>
+      <button class="sidebar-button skin-button btn btn-block" style="margin: 2px;" @click.stop="fastBackwardForward(1)">
+        <span :class="g3wtemplate.getFontClass('fast-forward')" style="color: #FFFFFF"></span>
+      </button>
+    </div>
   </li>
 </ul>
 
