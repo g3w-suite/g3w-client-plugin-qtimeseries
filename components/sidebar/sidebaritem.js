@@ -18,7 +18,7 @@ export default function Sidebaritem({service, options={}}={}){
         },
         stepunit: 'days', // get step unit
         current_layer_index: 0,
-        currentLayerDateTime: null,
+        currentLayerDateTimeIndex: null,
         status: 0, // status  [1: play, -1: back, 0: pause]
       };
     },
@@ -35,49 +35,58 @@ export default function Sidebaritem({service, options={}}={}){
       disablerun(){
         return this.status === 0 && (!this.layer.start_date || !this.layer.end_date) ;
       },
+      validRangeDates(){
+        return moment(this.layer.start_date).isValid() &&
+          moment(this.layer.end_date).isValid()
+          && moment(this.layer.end_date).diff(moment(this.layer.start_date)) >= 0;
+      },
     },
     methods:{
       /**
-       * Method to initilize
+       * Method to initiliaze the form time series on open and close
        */
       initLayerTimeseries(){
         this.status = 0;
-        this.range.min = 0;
-        this.range.max = this.layer.options.dates.length - 1;
         this.range.value = 0;
+        this.range.min = 0;
+        this.range.max = this.layer.options.dates.length ? this.layer.options.dates.length - 1 : 0;
         this.layer.start_date = this.layer.start_date && this.layerMinDate;
         this.layer.end_date = this.layer.end_date && this.layerMaxDate;
-        this.currentLayerDateTime = this.layer.start_date;
+        this.currentLayerDateTimeIndex = moment(this.layer.start_date);
         this.layer.start_date && this.getTimeLayer();
       },
       resetRangeData(){
         this.range.value = 0;
-        this.range.max = moment(this.layer.end_date, this.layer.format).diff(moment(this.layer.start_date, this.layer.format), this.stepunit) - 1;
+        // set max range
+        this.range.max = moment(this.layer.start_date).isValid() && moment(this.layer.end_date).isValid() ? moment(this.layer.end_date).diff(moment(this.layer.start_date), this.stepunit): 0;
       },
-      resetTimeLayer(layer){
-        service.resetTimeLayer(layer);
+      async resetTimeLayer(layer=this.layer){
+        this.pause();
+        await service.resetTimeLayer(layer);
         layer.timed = false;
-        this.currentLayerDateTime = null;
+        this.currentLayerDateTimeIndex = this.layer.start_date;
       },
-      handleRangeSteps(){},
       async getTimeLayer() {
         await service.getTimeLayer({
           layer: this.layer,
-          date: this.currentLayerDateTime
+          date: this.currentLayerDateTimeIndex
         });
         this.layer.timed = true;
       },
-      changeRangeStep({value}){
+      async changeRangeStep({value}){
         this.range.value = 1*value;
-        this.currentLayerDateTime = this.layer.options.dates[this.range.value = 1*value];
+        this.currentLayerDateTimeIndex = moment(this.layer.start_date).add(this.range.value, this.layer.options.stepunit);
+        await this.getTimeLayer()
       },
       changeStartDateTime(datetime){
         this.layer.start_date = datetime;
-        this.currentLayerDateTime = datetime;
+        this.currentLayerDateTimeIndex = datetime;
         this.resetRangeData();
-        this.getTimeLayer();
+        if (moment(datetime).isValid()) this.getTimeLayer();
+        else this.resetTimeLayer();
+
       },
-      changeEndDateTime(datetime){
+      async changeEndDateTime(datetime){
         this.layer.end_date = datetime;
         this.resetRangeData();
       },
@@ -90,7 +99,7 @@ export default function Sidebaritem({service, options={}}={}){
        */
       setCurrentDateTime(status){
         const step = 1*this.step;
-        this.currentLayerDateTime = moment(this.currentLayerDateTime, this.layer.options.format)[status === 1 ? 'add' : 'subtract'](step, this.layer.options.stepunit).format(this.layer.options.format);
+        this.currentLayerDateTimeIndex = moment(this.currentLayerDateTimeIndex)[status === 1 ? 'add' : 'subtract'](step, this.layer.options.stepunit);
       },
       run(status){
         if (this.status !== status) {
@@ -99,11 +108,10 @@ export default function Sidebaritem({service, options={}}={}){
             await this.getTimeLayer();
             const step = 1*this.step;
             this.range.value = status === 1 ? this.range.value + step: this.range.value - step;
-            if (this.range.value > this.range.max || this.range.value < 0){
+            if (this.range.value > this.range.max || this.range.value < 0) {
               this.resetRangeData();
               this.pause();
-            }
-            else this.setCurrentDateTime(status);
+            } else this.setCurrentDateTime(status);
             }, 1000);
           this.setStatus(status);
         } else this.pause()
@@ -120,7 +128,15 @@ export default function Sidebaritem({service, options={}}={}){
         this.getTimeLayer()
       },
       fastBackwardForward(direction){
-        this.range.value = direction === 1 ? this.range.max : this.range.min;
+        if (direction === 1) {
+          this.range.value = this.range.max;
+          this.currentLayerDateTimeIndex = this.layer.end_date;
+          this.getTimeLayer();
+        } else {
+          this.range.value = this.range.min;
+          this.currentLayerDateTimeIndex = this.layer.start_date;
+          this.getTimeLayer();
+        }
       }
     },
     watch: {
@@ -128,15 +144,17 @@ export default function Sidebaritem({service, options={}}={}){
         const previousLayer = this.layers[old_index_layer];
         if (previousLayer.timed) {
           this.resetTimeLayer(previousLayer);
-          previousLayer
+          previousLayer.timed = false;
         }
         this.initLayerTimeseries();
       },
       'panel.open'(bool){
         if (bool) this.initLayerTimeseries();
-        else this.resetTimeLayer(this.layer)
-
+        else this.resetTimeLayer()
       },
+      validRangeDates(bool){
+        !bool && this.resetTimeLayer();
+      }
     },
     created() {
       this.intervalEventHandler = null;

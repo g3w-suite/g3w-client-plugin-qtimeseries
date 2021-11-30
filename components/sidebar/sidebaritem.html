@@ -1,9 +1,5 @@
 <ul id="g3w_raster_timeseries_content" class="treeview-menu" style="position:relative; padding: 10px;color:#FFFFFF">
   <li>
-    <div style="display: flex; justify-content: space-between;  font-weight: bold; align-items: baseline; border-bottom: 1px solid white;margin-bottom: 3px;">
-      <span v-t-plugin="'qtimeseries.current_date'"></span>
-      <div v-show="currentLayerDateTime" style="font-size: 1.2em; align-items: center">{{ currentLayerDateTime }}</div>
-    </div>
     <form v-disabled="status !== 0">
       <label style="display: block">Layer</label>
       <select class="form-control" id="timeseriesrasterlayer" v-select2="'current_layer_index'" :search="false">
@@ -16,26 +12,26 @@
       <range label="plugins.qtimeseries.steps" :max="range.max" :value="range.value" :min="range.min" ref="rangecomponent" @change-range="changeRangeStep"></range>
     </form>
     <div style="display: flex; justify-content: space-between; margin-top: 10px" >
-      <button class="sidebar-button skin-button btn btn-block" style="margin: 2px;" @click.stop="fastBackwardForward(-1)">
+      <button class="sidebar-button skin-button btn btn-block" v-disabled="!validRangeDates || range.value === 0" style="margin: 2px;" @click.stop="fastBackwardForward(-1)">
         <span :class="g3wtemplate.getFontClass('fast-backward')"></span>
       </button>
-      <button class="sidebar-button skin-button btn btn-block" style="margin: 2px;" @click.stop="stepBackwardForward(-1)">
-        <span :class="g3wtemplate.getFontClass('step-backward')" style="color: #FFFFFF;"></span>
+      <button class="sidebar-button skin-button btn btn-block"  v-disabled="!validRangeDates || range.value <= 0" style="margin: 2px;" @click.stop="stepBackwardForward(-1)">
+        <span :class="g3wtemplate.getFontClass('step-backward')"></span>
       </button>
-      <button class="sidebar-button skin-button btn btn-block" :class="{toggled: status === -1}" style="margin: 2px;" @click.stop="run(-1)">
-        <span :class="g3wtemplate.getFontClass('run')" style="color: #FFFFFF; transform: rotate(180deg)"></span>
+      <button class="sidebar-button skin-button btn btn-block" :class="{toggled: status === -1}" v-disabled="!validRangeDates || range.value <= 0"  style="margin: 2px; transform: rotate(180deg)" @click.stop="run(-1)">
+        <span :class="g3wtemplate.getFontClass('run')"></span>
       </button>
       <button class="sidebar-button skin-button btn btn-block" :class="{toggled: status === 0}" style="margin: 2px;" @click.stop="pause">
-        <span :class="g3wtemplate.getFontClass('pause')" style="color: #FFFFFF"></span>
+        <span :class="g3wtemplate.getFontClass('pause')"></span>
       </button>
-      <button class="sidebar-button skin-button btn btn-block" :class="{toggled: status === 1}" style="margin: 2px;" @click.stop="run(1)">
-        <span :class="g3wtemplate.getFontClass('run')" style="color: #FFFFFF"></span>
+      <button class="sidebar-button skin-button btn btn-block"  :class="{toggled: status === 1}" v-disabled="!validRangeDates || range.value >= range.max" style="margin: 2px;" @click.stop="run(1)">
+        <span :class="g3wtemplate.getFontClass('run')"></span>
       </button>
-      <button class="sidebar-button skin-button btn btn-block" style="margin: 2px;" @click.stop="stepBackwardForward(1)">
-        <span :class="g3wtemplate.getFontClass('step-forward')" style="color: #FFFFFF"></span>
+      <button class="sidebar-button skin-button btn btn-block" v-disabled="!validRangeDates || range.value >= range.max" style="margin: 2px;" @click.stop="stepBackwardForward(1)">
+        <span :class="g3wtemplate.getFontClass('step-forward')"></span>
       </button>
-      <button class="sidebar-button skin-button btn btn-block" style="margin: 2px;" @click.stop="fastBackwardForward(1)">
-        <span :class="g3wtemplate.getFontClass('fast-forward')" style="color: #FFFFFF"></span>
+      <button class="sidebar-button skin-button btn btn-block" v-disabled="!validRangeDates || range.value === range.max" style="margin: 2px;" @click.stop="fastBackwardForward(1)">
+        <span :class="g3wtemplate.getFontClass('fast-forward')"></span>
       </button>
     </div>
   </li>
