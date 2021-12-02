@@ -8,12 +8,19 @@ export default {
     enddate: "Data Fine",
     stepsunit: {
       label: "Unità di passo",
-      days: 'Giorni',
-      weeks: 'Settimane',
-      months: 'Mesi',
+      centuries: 'Secoli',
+      decades: 'Decadi',
       years: 'Anni',
+      months: 'Mesi',
+      weeks: 'Settimane',
+      days: 'Giorni',
       hours: 'Ore',
-      minutes: 'Minuti'
+      minutes: 'Minuti',
+      seconds: 'Secondi',
+      milliseconds: "Millisecondi"
+    },
+    tooltips: {
+      showcharts: "Visualizza Grafici"
     }
   },
   en: {
@@ -25,12 +32,19 @@ export default {
     enddate: "End Date",
     stepsunit: {
       label: "Step Unit",
-      days: 'Days',
-      weeks: 'Weeks',
-      months: 'Months',
+      centuries: 'Centuries',
+      decades: 'Decades',
       years: 'Years',
+      months: 'Months',
+      weeks: 'Weeks',
+      days: 'Days',
       hours: 'Hours',
-      minutes: 'Minutes'
+      minutes: 'Minutes',
+      seconds: 'Seconds',
+      milliseconds: "Milliseconds"
+    },
+    tooltips: {
+      showcharts: "Show Charts"
     }
   },
   fi: {
@@ -42,12 +56,19 @@ export default {
     enddate: "End Date",
     stepsunit: {
       label: "Step Unit",
-      days: 'Days',
-      weeks: 'Weeks',
-      months: 'Months',
+      centuries: 'Centuries',
+      decades: 'Decades',
       years: 'Years',
+      months: 'Months',
+      weeks: 'Weeks',
+      days: 'Days',
       hours: 'Hours',
-      minutes: 'Minutes'
+      minutes: 'Minutes',
+      seconds: 'Seconds',
+      milliseconds: "Milliseconds"
+    },
+    tooltips: {
+      showcharts: "Show Charts"
     }
   },
   se: {
@@ -59,12 +80,19 @@ export default {
     enddate: "End Date",
     stepsunit: {
       label: "Step Unit",
-      days: 'Days',
-      weeks: 'Weeks',
-      months: 'Months',
+      centuries: 'Centuries',
+      decades: 'Decades',
       years: 'Years',
+      months: 'Months',
+      weeks: 'Weeks',
+      days: 'Days',
       hours: 'Hours',
-      minutes: 'Minutes'
+      minutes: 'Minutes',
+      seconds: 'Seconds',
+      milliseconds: "Milliseconds"
+    },
+    tooltips: {
+      showcharts: "Show Charts"
     }
   },
   fr: {
@@ -76,12 +104,19 @@ export default {
     enddate: "End Date",
     stepsunit: {
       label: "Step Unit",
-      days: 'Days',
-      weeks: 'Weeks',
-      months: 'Months',
+      centuries: 'Centuries',
+      decades: 'Decades',
       years: 'Years',
+      months: 'Months',
+      weeks: 'Weeks',
+      days: 'Days',
       hours: 'Hours',
-      minutes: 'Minutes'
+      minutes: 'Minutes',
+      seconds: 'Seconds',
+      milliseconds: "Milliseconds"
+    },
+    tooltips: {
+      showcharts: "Show Charts"
     }
   }
 }

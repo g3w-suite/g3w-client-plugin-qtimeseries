@@ -5,7 +5,6 @@ const {base, inherit} = g3wsdk.core.utils;
 const Plugin = g3wsdk.core.plugin.Plugin;
 const GUI = g3wsdk.gui.GUI;
 const addI18nPlugin = g3wsdk.core.i18n.addI18nPlugin;
-
 const _Plugin = function() {
   base(this);
   const pluginGroupTool = {
@@ -28,9 +27,9 @@ const _Plugin = function() {
     });
     // check if has some condition default true
     if (this.service.loadPlugin()) {
-      this.service.once('ready', () => {
+      this.service.once('ready', show => {
         //plugin registry
-        if (enabled) {
+        if (enabled && show) {
           if (!GUI.isready) GUI.on('ready', ()=> this.setupGui.bind(this));
           else this.setupGui();
         }

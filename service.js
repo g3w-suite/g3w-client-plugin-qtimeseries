@@ -1,9 +1,26 @@
-const {base, inherit, XHR} = g3wsdk.core.utils;
+const {base, inherit, XHR, toRawType, getRandomColor} = g3wsdk.core.utils;
 const GUI = g3wsdk.gui.GUI;
+const {DataRouterService} = g3wsdk.core.data;
+const {PickCoordinatesInteraction} = g3wsdk.ol.interactions;
 const BasePluginService = g3wsdk.core.plugin.PluginService;
+const ComponentsFactory = g3wsdk.gui.ComponentsFactory;
+const ChartsFactory = g3wsdk.gui.vue.Charts.ChartsFactory;
 const BASE_API_URL_RASTER_TYPE = '/qtimeseries/api/raster/serie/';
 const VECTOR_STEP_UNITS = {
-  d: "days"
+  c: '100:years',
+  dec:'10:years',
+  y: "years",
+  mon: "months",
+  d: "days",
+  h: "hours",
+  min: "minutes",
+  s: "seconds",
+  ms: "milliseconds"
+};
+
+const FORMAT_DATE_TIME_FIELD_TYPE = {
+  'date': 'YYYY-MM-DD',
+  'datetime': 'YYYY-MM-DD mm:hh:ss'
 };
 
 const WMS_PARAMETER = {
@@ -25,52 +42,169 @@ function PluginService(){
     this.project = this.getCurrentProject();
     this.config = config;
     this.mapService = GUI.getComponent('map').getService();
+    this.getChartConfig = {
+      interaction: null,
+      keyListener: null,
+      indexcolor: 0,
+      layer: new ol.layer.Vector({
+        source: new ol.source.Vector()
+      })
+    };
+    // stor cuurrent layer filter time
     for (let i=0; i < this.config.layers.length; i++){
       const layer = this.config.layers[i];
+      layer.timed = false; // used to check which layer is timed request
       const projectLayer = this.project.getLayerById(layer.id);
       layer.wmsname = projectLayer.getWMSLayerName();
       layer.name = projectLayer.getName();
-      layer.timed = false; // used to check which layer is timed request
       switch(layer.type){
         case 'raster':
           layer.options = await XHR.get({
             url: `${BASE_API_URL_RASTER_TYPE}${this.project.getId()}/${layer.id}`
           });
           layer.options.stepunit = 'days';
+          layer.options.stepunitmultiplier = 1;
           break;
       }
     }
     this.addVectorLayerFromConfigProject();
-    this.state = {
-      loading: false,
-      layers: this.config.layers,
-      panel: {
-        open:false
-      }
-    };
+    const show = this.config.layers.length > 0;
+    if (show) {
+      this.state = {
+        loading: false,
+        layers: this.config.layers,
+        panel: {
+          open:false
+        }
+      };
+    }
 
-    this.emit('ready');
+    this.emit('ready', show);
+  };
+
+  this.activeChartInteraction = function(layer){
+    this.mapService.disableClickMapControls(true);
+    const interaction = new PickCoordinatesInteraction();
+    this.getChartConfig.interaction = interaction;
+    this.mapService.addInteraction(interaction);
+    this.mapService.getMap().addLayer(this.getChartConfig.layer);
+    interaction.setActive(true);
+    this.getChartConfig.keyListener = interaction.on('picked', async evt =>{
+      const {coordinate} = evt;
+      const color = getRandomColor();
+      const style = new ol.style.Style({
+        image: new ol.style.RegularShape({
+          fill: new ol.style.Fill({
+            color
+          }),
+          stroke: new ol.style.Stroke({
+            color,
+            width: 3
+          }),
+          points: 4,
+          radius: 10,
+          radius2: 0,
+          angle: Math.PI / 4,
+        })
+      });
+      const feature = new ol.Feature(new ol.geom.Point(coordinate));
+      feature.setStyle(style);
+      this.getChartConfig.layer.getSource().addFeature(feature);
+      const {data=[]} = await DataRouterService.getData('query:coordinates', {
+        inputs: {
+          layerIds: [layer.id],
+          coordinates: coordinate,
+          feature_count: 1
+        },
+        outputs: false
+      });
+      const values = [];
+      Object.entries(data[0].features[0].getProperties()).forEach(([attribute, value])=>{
+        if (attribute !== 'geometry' ||  attribute !== 'g3w_fid'){
+          values.push(value);
+        }
+      });
+      const content = ComponentsFactory.build({
+        vueComponentObject: ChartsFactory.build({
+          type: 'c3:lineXY',
+          hooks: {
+            created(){
+              this.setConfig({
+                data: {
+                  x: 'x',
+                  columns: [
+                    ['x', ...layer.options.dates],
+                    [coordinate.toString(), ...values]
+                  ],
+                  colors: {
+                    [coordinate.toString()]: color
+                  }
+                },
+                axis: {
+                  x: {
+                    type: 'timeseries',
+                    tick: {
+                      format: '%Y-%m-%d'
+                    }
+                  }
+                }
+              })
+            }
+          }
+        })
+      });
+      GUI.showContent({
+        title: layer.name,
+        perc: 50,
+        split: 'v',
+        closable: false,
+        content
+      });
+    })
+  };
+
+  this.deactiveChartInteraction = function(){
+    if (this.getChartConfig.interaction) {
+      this.mapService.disableClickMapControls(false);
+      this.getChartConfig.layer.getSource().clear();
+      this.mapService.getMap().removeLayer(this.getChartConfig.layer);
+      this.getChartConfig.interaction.setActive(false);
+      ol.Observable.unByKey(this.getChartConfig.keyListener);
+      this.mapService.removeInteraction(this.getChartConfig.interaction);
+      this.getChartConfig.interaction = null;
+      this.getChartConfig.keyListener = null;
+      GUI.closeContent();
+    }
+  };
+
+  this.chartsInteraction = function({active=false, layer}={}){
+    active ? this.activeChartInteraction(layer) : this.deactiveChartInteraction()
   };
 
   this.addVectorLayerFromConfigProject = function(){
     this.project.getConfigLayers().forEach(layerConfig => {
-      if (layerConfig.qtimeseries) {
-        const projectLayer = this.project.getLayerById(layerConfig.id);
-        const {field, units='d', mode, begin, end} = layerConfig.qtimeseries;
-        const layer = {
-          id: layerConfig.id,
-          type: 'vector',
-          name: projectLayer.getName(),
-          wmsname: projectLayer.getWMSLayerName(),
-          start_date: begin ,
-          end_date: end,
-          options: {
-            dates: [],
-            stepunit: VECTOR_STEP_UNITS[units],
-            field
-          }
-        };
-        this.config.layers.push(layer);
+      if (toRawType(layerConfig.qtimeseries) === 'Object') {
+        const {field, units='d', mode, begin=null, end=null} = layerConfig.qtimeseries;
+        if (field){
+          const projectLayer = this.project.getLayerById(layerConfig.id);
+          const field_type = projectLayer.getFieldByName(field).type;
+          const stepunit_and_multiplier = VECTOR_STEP_UNITS[units].split(':');
+          const layer = {
+            id: layerConfig.id,
+            type: 'vector',
+            name: projectLayer.getName(),
+            wmsname: projectLayer.getWMSLayerName(),
+            start_date: begin,
+            end_date: end,
+            options: {
+              format: FORMAT_DATE_TIME_FIELD_TYPE[field_type],
+              stepunit: stepunit_and_multiplier.length > 1 ? stepunit_and_multiplier[1]: stepunit_and_multiplier[0],
+              stepunitmultiplier: stepunit_and_multiplier.length > 1 ? 1*stepunit_and_multiplier[0] : 1,
+              field
+            }
+          };
+          this.config.layers.push(layer);
+        }
       }
     })
   };
@@ -92,7 +226,10 @@ function PluginService(){
         this.mapService.showMapInfo({
           info: findDate,
           style: {
-            fontSize: '1.2em'
+            fontSize: '1.2em',
+            color: 'grey',
+            border: '1px solid grey',
+            padding: '10px'
           }
         });
         resolve();
@@ -117,7 +254,7 @@ function PluginService(){
           resolve();
         }
       } else {
-        findDate = date;
+        findDate = moment(date).format(layer.options.format);
         this.mapService.updateMapLayer(mapLayerToUpdate, {
           force: false,
           [WMS_PARAMETER[layer.type]]: `${layer.wmsname}:"${layer.options.field}" = '${findDate}'` // in case of vector layer
@@ -156,6 +293,7 @@ function PluginService(){
     const layer = this.state.layers.find(layer => layer.timed);
     layer && this.resetTimeLayer(layer);
     this.state.panel.open = false;
+    this.deactiveChartInteraction();
   };
 
   /**

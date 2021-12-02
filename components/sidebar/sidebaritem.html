@@ -1,38 +1,45 @@
 <ul id="g3w_raster_timeseries_content" class="treeview-menu" style="position:relative; padding: 10px;color:#FFFFFF">
   <li>
-    <form v-disabled="status !== 0">
-      <label style="display: block">Layer</label>
-      <select class="form-control" id="timeseriesrasterlayer" v-select2="'current_layer_index'" :search="false">
-        <option v-for="(layer, index) in layers" :value="index" :key="layer.id">{{layer.name}}</option>
-      </select>
-      <datetime :label="'plugins.qtimeseries.startdate'" :enabledDates="layer.options.dates" :minDate="layerMinDate" :maxDate="layerMaxDate" :type="'datetime'" :value="layer.start_date" @change="changeStartDateTime"></datetime>
-      <datetime :label="'plugins.qtimeseries.enddate'" :enabledDates="layer.options.dates" :minDate="layerMinDate" :maxDate="layerMaxDate" :type="'datetime'" :value="layer.end_date" @change="changeEndDateTime"></datetime>
-      <label v-t-plugin:pre="'qtimeseries.step'">[<span v-t-plugin="`qtimeseries.stepsunit.${layer.options.stepunit}`"></span> ]</label>
-      <input class="form-control" type="number" :min="range.min" :max="range.max" v-model="step">
-      <range label="plugins.qtimeseries.steps" :max="range.max" :value="range.value" :min="range.min" ref="rangecomponent" @change-range="changeRangeStep"></range>
-    </form>
-    <div style="display: flex; justify-content: space-between; margin-top: 10px" >
-      <button class="sidebar-button skin-button btn btn-block" v-disabled="!validRangeDates || range.value === 0" style="margin: 2px;" @click.stop="fastBackwardForward(-1)">
-        <span :class="g3wtemplate.getFontClass('fast-backward')"></span>
+    <div v-disabled="status !== 0" v-if="layer.type === 'raster'" v-t-tooltip.create="'plugins.qtimeseries.tooltips.showcharts'" data-placement="top" data-toggle="tooltip" style="padding: 5px; border:1px solid" class="skin-border skin-tooltip-top">
+      <button  class="sidebar-button skin-button btn btn-block" :class="{toggled: showCharts}" style="margin: 2px;" @click.stop="showRasterLayerCharts">
+        <span :class="g3wtemplate.getFontClass('chart-line')"></span>
       </button>
-      <button class="sidebar-button skin-button btn btn-block"  v-disabled="!validRangeDates || range.value <= 0" style="margin: 2px;" @click.stop="stepBackwardForward(-1)">
-        <span :class="g3wtemplate.getFontClass('step-backward')"></span>
-      </button>
-      <button class="sidebar-button skin-button btn btn-block" :class="{toggled: status === -1}" v-disabled="!validRangeDates || range.value <= 0"  style="margin: 2px; transform: rotate(180deg)" @click.stop="run(-1)">
-        <span :class="g3wtemplate.getFontClass('run')"></span>
-      </button>
-      <button class="sidebar-button skin-button btn btn-block" :class="{toggled: status === 0}" style="margin: 2px;" @click.stop="pause">
-        <span :class="g3wtemplate.getFontClass('pause')"></span>
-      </button>
-      <button class="sidebar-button skin-button btn btn-block"  :class="{toggled: status === 1}" v-disabled="!validRangeDates || range.value >= range.max" style="margin: 2px;" @click.stop="run(1)">
-        <span :class="g3wtemplate.getFontClass('run')"></span>
-      </button>
-      <button class="sidebar-button skin-button btn btn-block" v-disabled="!validRangeDates || range.value >= range.max" style="margin: 2px;" @click.stop="stepBackwardForward(1)">
-        <span :class="g3wtemplate.getFontClass('step-forward')"></span>
-      </button>
-      <button class="sidebar-button skin-button btn btn-block" v-disabled="!validRangeDates || range.value === range.max" style="margin: 2px;" @click.stop="fastBackwardForward(1)">
-        <span :class="g3wtemplate.getFontClass('fast-forward')"></span>
-      </button>
+    </div>
+    <div v-disabled="showCharts">
+      <form v-disabled="formDisabled">
+        <label style="display: block">Layer</label>
+        <select class="form-control" id="timeseriesrasterlayer" v-select2="'current_layer_index'" :search="false">
+          <option v-for="(layer, index) in layers" :value="index" :key="layer.id">{{layer.name}}</option>
+        </select>
+        <datetime :label="'plugins.qtimeseries.startdate'" :enabledDates="layer.options.dates" :minDate="layerMinDate" :maxDate="layerMaxDate" :type="'datetime'" :value="layer.start_date" @change="changeStartDateTime"></datetime>
+        <datetime :label="'plugins.qtimeseries.enddate'" :enabledDates="layer.options.dates" :minDate="layerMinDate" :maxDate="layerMaxDate" :type="'datetime'" :value="layer.end_date" @change="changeEndDateTime"></datetime>
+        <label v-t-plugin:pre="'qtimeseries.step'">[<span v-t-plugin="`qtimeseries.stepsunit.${stepunitLabel}`"></span> ]</label>
+        <input class="form-control" type="number" :min="range.min" :max="range.max" :step="layer.options.stepunitmultiplier" v-model="step">
+        <range v-disabled="range.max === range.min " label="plugins.qtimeseries.steps" :max="range.max" :value="range.value" :min="range.min" ref="rangecomponent" @change-range="changeRangeStep"></range>
+      </form>
+      <div style="display: flex; justify-content: space-between; margin-top: 10px" >
+        <button class="sidebar-button skin-button btn btn-block" v-disabled="!validRangeDates || range.value === 0" style="margin: 2px;" @click.stop="fastBackwardForward(-1)">
+          <span :class="g3wtemplate.getFontClass('fast-backward')"></span>
+        </button>
+        <button class="sidebar-button skin-button btn btn-block"  v-disabled="!validRangeDates || range.value <= 0" style="margin: 2px;" @click.stop="stepBackwardForward(-1)">
+          <span :class="g3wtemplate.getFontClass('step-backward')"></span>
+        </button>
+        <button class="sidebar-button skin-button btn btn-block" :class="{toggled: status === -1}" v-disabled="!validRangeDates || range.value <= 0"  style="margin: 2px; transform: rotate(180deg)" @click.stop="run(-1)">
+          <span :class="g3wtemplate.getFontClass('run')"></span>
+        </button>
+        <button class="sidebar-button skin-button btn btn-block" :class="{toggled: status === 0}" style="margin: 2px;" @click.stop="pause">
+          <span :class="g3wtemplate.getFontClass('pause')"></span>
+        </button>
+        <button class="sidebar-button skin-button btn btn-block"  :class="{toggled: status === 1}" v-disabled="!validRangeDates || range.value >= range.max" style="margin: 2px;" @click.stop="run(1)">
+          <span :class="g3wtemplate.getFontClass('run')"></span>
+        </button>
+        <button class="sidebar-button skin-button btn btn-block" v-disabled="!validRangeDates || range.value >= range.max" style="margin: 2px;" @click.stop="stepBackwardForward(1)">
+          <span :class="g3wtemplate.getFontClass('step-forward')"></span>
+        </button>
+        <button class="sidebar-button skin-button btn btn-block" v-disabled="!validRangeDates || range.value === range.max" style="margin: 2px;" @click.stop="fastBackwardForward(1)">
+          <span :class="g3wtemplate.getFontClass('fast-forward')"></span>
+        </button>
+      </div>
     </div>
   </li>
 </ul>
