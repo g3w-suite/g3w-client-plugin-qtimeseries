@@ -46,6 +46,7 @@ function PluginService(){
       interaction: null,
       keyListener: null,
       indexcolor: 0,
+      chart: null,
       layer: new ol.layer.Vector({
         source: new ol.source.Vector()
       })
@@ -78,11 +79,11 @@ function PluginService(){
         }
       };
     }
-
     this.emit('ready', show);
   };
 
   this.activeChartInteraction = function(layer){
+    const self = this;
     this.mapService.disableClickMapControls(true);
     const interaction = new PickCoordinatesInteraction();
     this.getChartConfig.interaction = interaction;
@@ -124,42 +125,59 @@ function PluginService(){
           values.push(value);
         }
       });
-      const content = ComponentsFactory.build({
-        vueComponentObject: ChartsFactory.build({
-          type: 'c3:lineXY',
-          hooks: {
-            created(){
-              this.setConfig({
-                data: {
-                  x: 'x',
-                  columns: [
-                    ['x', ...layer.options.dates],
-                    [coordinate.toString(), ...values]
-                  ],
-                  colors: {
-                    [coordinate.toString()]: color
-                  }
-                },
-                axis: {
-                  x: {
-                    type: 'timeseries',
-                    tick: {
-                      format: '%Y-%m-%d'
-                    }
-                  }
-                }
-              })
-            }
+      if (this.getChartConfig.chart){
+        this.getChartConfig.chart.load({
+          columns: [
+            [coordinate.toString(), ...values]
+          ],
+          colors: {
+            [coordinate.toString()]: color
           }
         })
-      });
-      GUI.showContent({
-        title: layer.name,
-        perc: 50,
-        split: 'v',
-        closable: false,
-        content
-      });
+      } else {
+        const content = ComponentsFactory.build({
+          vueComponentObject: ChartsFactory.build({
+            type: 'c3:lineXY',
+            hooks: {
+              created(){
+                this.setConfig({
+                  data: {
+                    x: 'x',
+                    columns: [
+                      ['x', ...layer.options.dates],
+                      [coordinate.toString(), ...values]
+                    ],
+                    colors: {
+                      [coordinate.toString()]: color
+                    }
+                  },
+                  axis: {
+                    x: {
+                      type: 'timeseries',
+                      tick: {
+                        format: '%Y-%m-%d'
+                      }
+                    }
+                  }
+                });
+                this.$once('chart-ready', c3chart =>{
+                  self.getChartConfig.chart = c3chart;
+                  setTimeout(()=>{
+                    this.resize();
+                  })
+                })
+              }
+            }
+          })
+        });
+        GUI.showContent({
+          title: layer.name,
+          perc: 50,
+          split: 'v',
+          closable: false,
+          content
+        });
+      }
     })
   };
 
@@ -173,6 +191,7 @@ function PluginService(){
       this.mapService.removeInteraction(this.getChartConfig.interaction);
       this.getChartConfig.interaction = null;
       this.getChartConfig.keyListener = null;
+      this.getChartConfig.chart = null;
       GUI.closeContent();
     }
   };
