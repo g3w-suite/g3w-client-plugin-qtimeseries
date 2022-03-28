@@ -203,7 +203,8 @@ function PluginService(){
   this.addVectorLayerFromConfigProject = function(){
     this.project.getConfigLayers().forEach(layerConfig => {
       if (toRawType(layerConfig.qtimeseries) === 'Object') {
-        const {field, units='d', mode, begin=null, end=null} = layerConfig.qtimeseries;
+        console.log(layerConfig.qtimeseries)
+        const {field, units='d', mode, start_date=null, end_date=null} = layerConfig.qtimeseries;
         if (field){
           const projectLayer = this.project.getLayerById(layerConfig.id);
           const field_type = projectLayer.getFieldByName(field).type;
@@ -213,8 +214,8 @@ function PluginService(){
             type: 'vector',
             name: projectLayer.getName(),
             wmsname: projectLayer.getWMSLayerName(),
-            start_date: begin,
-            end_date: end,
+            start_date,
+            end_date,
             options: {
               format: FORMAT_DATE_TIME_FIELD_TYPE[field_type],
               stepunit: stepunit_and_multiplier.length > 1 ? stepunit_and_multiplier[1]: stepunit_and_multiplier[0],
