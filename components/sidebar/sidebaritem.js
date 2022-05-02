@@ -14,6 +14,7 @@ export default function Sidebaritem({service, options={}}={}){
           min:0,
           max:0
         },
+        changed_layer: false,
         current_layer_index: 0,
         currentLayerDateTimeIndex: null,
         showCharts: false,
@@ -37,19 +38,21 @@ export default function Sidebaritem({service, options={}}={}){
         return stepunit;
       },
       layer(){
+        this.changed_layer = true;
+        setTimeout(()=> this.changed_layer = false);
         return this.layers[this.current_layer_index];
       },
       layerMinDate(){
-        return this.layer.options.dates && this.layer.options.dates[0];
+        return this.layer.start_date ? this.layer.start_date : this.layer.options.dates && this.layer.options.dates[0];
       },
       layerMaxDate(){
-        return this.layer.options.dates && this.layer.options.dates[this.layer.options.dates.length -1];
+        return this.layer.end_date ? this.layer.end_date : this.layer.options.dates && this.layer.options.dates[this.layer.options.dates.length -1];
       },
       disablerun(){
         return this.status === 0 && (!this.layer.start_date || !this.layer.end_date) ;
       },
       validRangeDates(){
-        return this.validateStartDateEndDate() && moment(this.layer.end_date).diff(moment(this.layer.start_date), this.layer.options.stepunit) >= this.getStepValue();;
+        return this.validateStartDateEndDate() && moment(this.layer.end_date).diff(moment(this.layer.start_date), this.layer.options.stepunit) >= this.getStepValue();
       },
     },
     methods:{
@@ -61,7 +64,7 @@ export default function Sidebaritem({service, options={}}={}){
         this.currentLayerDateTimeIndex = this.layer.start_date;
         this.range.value = 0;
         this.range.min = 0;
-        this.range.max = this.layer.options.dates ? this.layer.options.dates.length - 1 : 0;
+        this.range.max = this.layer.options.dates ? this.layer.options.dates.length - 1 : this.layer.options.range_max || 0;
         this.currentLayerDateTimeIndex && this.getTimeLayer();
         this.showCharts = false;
       },
@@ -90,8 +93,10 @@ export default function Sidebaritem({service, options={}}={}){
        * @returns {Promise<void>}
        */
       async getTimeLayer() {
+        await this.$nextTick();
         await service.getTimeLayer({
           layer: this.layer,
+          step: this.step,
           date: this.currentLayerDateTimeIndex
         });
         this.layer.timed = true;

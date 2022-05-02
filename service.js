@@ -203,12 +203,14 @@ function PluginService(){
   this.addVectorLayerFromConfigProject = function(){
     this.project.getConfigLayers().forEach(layerConfig => {
       if (toRawType(layerConfig.qtimeseries) === 'Object') {
-        console.log(layerConfig.qtimeseries)
         const {field, units='d', mode, start_date=null, end_date=null} = layerConfig.qtimeseries;
         if (field){
           const projectLayer = this.project.getLayerById(layerConfig.id);
           const field_type = projectLayer.getFieldByName(field).type;
           const stepunit_and_multiplier = VECTOR_STEP_UNITS[units].split(':');
+          const format = FORMAT_DATE_TIME_FIELD_TYPE[field_type];
+          const stepunit = stepunit_and_multiplier.length > 1 ? stepunit_and_multiplier[1]: stepunit_and_multiplier[0];
+          const stepunitmultiplier = stepunit_and_multiplier.length > 1 ? 1*stepunit_and_multiplier[0] : 1;
           const layer = {
             id: layerConfig.id,
             type: 'vector',
@@ -217,9 +219,10 @@ function PluginService(){
             start_date,
             end_date,
             options: {
-              format: FORMAT_DATE_TIME_FIELD_TYPE[field_type],
-              stepunit: stepunit_and_multiplier.length > 1 ? stepunit_and_multiplier[1]: stepunit_and_multiplier[0],
-              stepunitmultiplier: stepunit_and_multiplier.length > 1 ? 1*stepunit_and_multiplier[0] : 1,
+              range_max: moment(end_date).diff(moment(start_date), stepunit) - 1,
+              format,
+              stepunit,
+              stepunitmultiplier,
               field
             }
           };
@@ -235,8 +238,9 @@ function PluginService(){
    * @param date
    * @returns {Promise<unknown>}
    */
-  this.getTimeLayer = function({layer, date}={}){
+  this.getTimeLayer = function({layer, date, step}={}){
     let findDate;
+    let endDate;
     return new Promise((resolve, reject) =>{
       const {id} = layer;
       const projectLayer = this.project.getLayerById(id);
@@ -244,7 +248,7 @@ function PluginService(){
       const mapLayerToUpdate = this.mapService.getMapLayerByLayerId(id);
       mapLayerToUpdate.once('loadend', ()=> {
         this.mapService.showMapInfo({
-          info: findDate,
+          info: endDate ? `${findDate} - ${endDate}` : findDate ,
           style: {
             fontSize: '1.2em',
             color: 'grey',
@@ -260,7 +264,7 @@ function PluginService(){
         if (index !== -1){
           findDate = layer.options.dates[index];
           this.mapService.updateMapLayer(mapLayerToUpdate, {
-            force: false,
+            force: true,
             [WMS_PARAMETER[layer.type]]: `${layer.wmsname},${index}` // in case of raster layer
           }, UPDATE_MAPLAYER_OPTIONS);
         } else {
@@ -275,9 +279,14 @@ function PluginService(){
         }
       } else {
         findDate = moment(date).format(layer.options.format);
+        endDate = moment(date).add(step, layer.options.stepunit).format(layer.options.format);
+        const isAfter = moment(endDate).isAfter(layer.end_date);
+        let wmsParam = `${layer.wmsname}:"${layer.options.field}" = '${findDate}'`;
+        if (isAfter) endDate = findDate;
+        else wmsParam = `${layer.wmsname}:"${layer.options.field}" >= '${findDate}' AND "${layer.options.field}" < '${endDate}'`;
         this.mapService.updateMapLayer(mapLayerToUpdate, {
-          force: false,
-          [WMS_PARAMETER[layer.type]]: `${layer.wmsname}:"${layer.options.field}" = '${findDate}'` // in case of vector layer
+          force: true,
+          [WMS_PARAMETER[layer.type]]: wmsParam  // in case of vector layer
         }, UPDATE_MAPLAYER_OPTIONS);
       }
     })

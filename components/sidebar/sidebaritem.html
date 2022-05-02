@@ -11,11 +11,13 @@
         <select class="form-control" id="timeseriesrasterlayer" v-select2="'current_layer_index'" :search="false">
           <option v-for="(layer, index) in layers" :value="index" :key="layer.id">{{layer.name}}</option>
         </select>
-        <datetime :label="'plugins.qtimeseries.startdate'" :enabledDates="layer.options.dates" :minDate="layerMinDate" :maxDate="layerMaxDate" :type="'datetime'" :value="layer.start_date" @change="changeStartDateTime"></datetime>
-        <datetime :label="'plugins.qtimeseries.enddate'" :enabledDates="layer.options.dates" :minDate="layerMinDate" :maxDate="layerMaxDate" :type="'datetime'" :value="layer.end_date" @change="changeEndDateTime"></datetime>
-        <label v-t-plugin:pre="'qtimeseries.step'">[<span v-t-plugin="`qtimeseries.stepsunit.${stepunitLabel}`"></span> ]</label>
-        <input class="form-control" type="number" :min="range.min" :max="range.max" :step="layer.options.stepunitmultiplier" v-model="step">
-        <range v-disabled="range.max === range.min " label="plugins.qtimeseries.steps" :max="range.max" :value="range.value" :min="range.min" ref="rangecomponent" @change-range="changeRangeStep"></range>
+        <div v-if="!changed_layer">
+          <datetime :label="'plugins.qtimeseries.startdate'" :enabledDates="layer.options.dates" :minDate="layerMinDate" :maxDate="layerMaxDate" :type="'datetime'" :value="layer.start_date" @change="changeStartDateTime"></datetime>
+          <datetime :label="'plugins.qtimeseries.enddate'" :enabledDates="layer.options.dates" :minDate="layerMinDate" :maxDate="layerMaxDate" :type="'datetime'" :value="layer.end_date" @change="changeEndDateTime"></datetime>
+          <label v-t-plugin:pre="'qtimeseries.step'">[<span v-t-plugin="`qtimeseries.stepsunit.${stepunitLabel}`"></span> ]</label>
+          <input class="form-control" type="number" :min="range.min" :max="range.max" :step="layer.options.stepunitmultiplier" v-model="step">
+          <range v-disabled="range.max === range.min " label="plugins.qtimeseries.steps" :max="range.max" :value="range.value" :min="range.min" ref="rangecomponent" @change-range="changeRangeStep"></range>
+        </div>
       </form>
       <div style="display: flex; justify-content: space-between; margin-top: 10px" >
         <button class="sidebar-button skin-button btn btn-block" v-disabled="!validRangeDates || range.value === 0" style="margin: 2px;" @click.stop="fastBackwardForward(-1)">
