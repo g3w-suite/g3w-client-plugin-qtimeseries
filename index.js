@@ -51,6 +51,7 @@ const _Plugin = function() {
         title: `plugins.${pluginConfig.name}.title`,
         open: false,
         collapsible: true,
+        isolate: true,
         closewhenshowviewportcontent: false,
         iconConfig: {
           color: '#25bce9',
