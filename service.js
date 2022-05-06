@@ -25,7 +25,8 @@ const FORMAT_DATE_TIME_FIELD_TYPE = {
 
 const WMS_PARAMETER = {
   'raster': 'RBAND',
-  'vector': 'FILTER'
+  'vector': 'FILTER',
+  'wmts': 'TIME'
 };
 
 const UPDATE_MAPLAYER_OPTIONS = {
@@ -213,7 +214,7 @@ function PluginService(){
           const stepunitmultiplier = stepunit_and_multiplier.length > 1 ? 1*stepunit_and_multiplier[0] : 1;
           const layer = {
             id: layerConfig.id,
-            type: 'vector',
+            type: 'vector', // added vector layer
             name: projectLayer.getName(),
             wmsname: projectLayer.getWMSLayerName(),
             start_date,
@@ -258,36 +259,46 @@ function PluginService(){
         });
         resolve();
       });
-      if (layer.type === 'raster'){
-        const index = layer.options.dates.findIndex(_date => moment(date).isSame(_date));
-        // check if date is inside dates available of raster layer
-        if (index !== -1){
-          findDate = layer.options.dates[index];
+      const {type} = layer;
+      switch (type) {
+        case 'raster':
+          const index = layer.options.dates.findIndex(_date => moment(date).isSame(_date));
+          // check if date is inside dates available of raster layer
+          if (index !== -1){
+            findDate = layer.options.dates[index];
+            this.mapService.updateMapLayer(mapLayerToUpdate, {
+              force: true,
+              [WMS_PARAMETER[layer.type]]: `${layer.wmsname},${index}` // in case of raster layer
+            }, UPDATE_MAPLAYER_OPTIONS);
+          } else {
+            this.mapService.showMapInfo({
+              info: date,
+              style: {
+                fontSize: '1.2em',
+                color: 'red'
+              }
+            });
+            resolve();
+          }
+          break;
+        case 'wmts':
+          findDate = moment(date).format(layer.options.format);
           this.mapService.updateMapLayer(mapLayerToUpdate, {
             force: true,
-            [WMS_PARAMETER[layer.type]]: `${layer.wmsname},${index}` // in case of raster layer
+            [WMS_PARAMETER[layer.type]]: findDate  // in case of vector layer
           }, UPDATE_MAPLAYER_OPTIONS);
-        } else {
-          this.mapService.showMapInfo({
-            info: date,
-            style: {
-              fontSize: '1.2em',
-              color: 'red'
-            }
-          });
-          resolve();
-        }
-      } else {
-        findDate = moment(date).format(layer.options.format);
-        endDate = moment(date).add(step, layer.options.stepunit).format(layer.options.format);
-        const isAfter = moment(endDate).isAfter(layer.end_date);
-        let wmsParam = `${layer.wmsname}:"${layer.options.field}" = '${findDate}'`;
-        if (isAfter) endDate = findDate;
-        else wmsParam = `${layer.wmsname}:"${layer.options.field}" >= '${findDate}' AND "${layer.options.field}" < '${endDate}'`;
-        this.mapService.updateMapLayer(mapLayerToUpdate, {
-          force: true,
-          [WMS_PARAMETER[layer.type]]: wmsParam  // in case of vector layer
-        }, UPDATE_MAPLAYER_OPTIONS);
+        case 'vector':
+          findDate = moment(date).format(layer.options.format);
+          endDate = moment(date).add(step, layer.options.stepunit).format(layer.options.format);
+          const isAfter = moment(endDate).isAfter(layer.end_date);
+          let wmsParam = `${layer.wmsname}:"${layer.options.field}" = '${findDate}'`;
+          if (isAfter) endDate = findDate;
+          else wmsParam = `${layer.wmsname}:"${layer.options.field}" >= '${findDate}' AND "${layer.options.field}" < '${endDate}'`;
+          this.mapService.updateMapLayer(mapLayerToUpdate, {
+            force: true,
+            [WMS_PARAMETER[layer.type]]: wmsParam  // in case of vector layer
+          }, UPDATE_MAPLAYER_OPTIONS);
+          break;
       }
     })
   };
