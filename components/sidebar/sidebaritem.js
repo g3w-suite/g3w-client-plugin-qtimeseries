@@ -1,3 +1,4 @@
+import {STEP_UNITS} from "../../constant";
 const template = require('./sidebaritem.html');
 export default function Sidebaritem({service, options={}}={}){
   return {
@@ -9,6 +10,10 @@ export default function Sidebaritem({service, options={}}={}){
         layers,
         panel,
         step: 1,
+        step_units: STEP_UNITS,
+        current_step_unit: layers[0].options.stepunit,
+        change_step_unit: false,
+        current_step_unit_label: STEP_UNITS.find(step_unit => step_unit.moment === layers[0].options.stepunit).label,
         range: {
           value:0,
           min:0,
@@ -25,18 +30,6 @@ export default function Sidebaritem({service, options={}}={}){
       formDisabled(){
         return this.status !== 0 || this.showCharts;
       },
-      stepunitLabel(){
-        let {stepunitmultiplier, stepunit} = this.layer.options;
-        switch(stepunitmultiplier){
-          case(10):
-            stepunit = 'decades';
-            break;
-          case(100):
-            stepunit = 'centuries';
-            break;
-        }
-        return stepunit;
-      },
       layer(){
         this.changed_layer = true;
         setTimeout(()=> this.changed_layer = false);
@@ -52,7 +45,8 @@ export default function Sidebaritem({service, options={}}={}){
         return this.status === 0 && (!this.layer.start_date || !this.layer.end_date) ;
       },
       validRangeDates(){
-        return this.validateStartDateEndDate() && moment(this.layer.end_date).diff(moment(this.layer.start_date), this.layer.options.stepunit) >= this.getStepValue();
+        const {multiplier, step_unit} = this.getMultiplierAndStepUnit();
+        return this.validateStartDateEndDate() && moment(this.layer.end_date).diff(moment(this.layer.start_date), step_unit) / multiplier >= this.getStepValue();
       },
     },
     methods:{
@@ -64,7 +58,7 @@ export default function Sidebaritem({service, options={}}={}){
         this.currentLayerDateTimeIndex = this.layer.start_date;
         this.range.value = 0;
         this.range.min = 0;
-        this.range.max = this.layer.options.dates ? this.layer.options.dates.length - 1 : this.layer.options.range_max || 0;
+        this.resetRangeInputData();
         this.currentLayerDateTimeIndex && this.getTimeLayer();
         this.showCharts = false;
       },
@@ -72,11 +66,26 @@ export default function Sidebaritem({service, options={}}={}){
        * Method to reset range on change start date or end date time
        */
       resetRangeInputData(){
-        // reste range value to 0
+        // reset range value to 0
         this.range.value = 0;
         // set max range
+        const {multiplier, step_unit} = this.getMultiplierAndStepUnit();
         this.range.max = this.validateStartDateEndDate() ?
-          Number.parseInt(moment(this.layer.end_date).diff(moment(this.layer.start_date), this.layer.options.stepunit) / this.layer.options.stepunitmultiplier) : 0;
+          Number.parseInt(moment(this.layer.end_date).diff(moment(this.layer.start_date), step_unit) / multiplier * this.layer.options.stepunitmultiplier) : 0;
+      },
+      changeRangeInputOnChangeStepUnit(){
+        // reset range value to 0
+        this.range.value = 0;
+        // set max range
+        const {multiplier, step_unit} = this.getMultiplierAndStepUnit();
+        this.range.max = this.validateStartDateEndDate() ?
+          Number.parseInt(moment(this.layer.end_date).diff(moment(this.layer.start_date), step_unit) / multiplier * this.layer.options.stepunitmultiplier) : 0;
+      },
+      /*
+        Method to extract step unit and eventuallY multiply factor (10, 100) in case es: decade e centrury for moment purpose
+       */
+      getMultiplierAndStepUnit(){
+        return service.getMultiplierAndStepUnit(this.layer);
       },
       /**
        * Reset time layer to original map layer no filter by time or band
@@ -94,11 +103,14 @@ export default function Sidebaritem({service, options={}}={}){
        */
       async getTimeLayer() {
         await this.$nextTick();
-        await service.getTimeLayer({
-          layer: this.layer,
-          step: this.step,
-          date: this.currentLayerDateTimeIndex
-        });
+        try {
+          await service.getTimeLayer({
+            layer: this.layer,
+            step: this.step,
+            date: this.currentLayerDateTimeIndex
+          });
+        } catch(err){
+        }
         this.layer.timed = true;
       },
       /**
@@ -108,7 +120,8 @@ export default function Sidebaritem({service, options={}}={}){
        */
       async changeRangeStep({value}){
         this.range.value = 1*value;
-        this.currentLayerDateTimeIndex = moment(this.layer.start_date).add(this.range.value, this.layer.options.stepunit);
+        const {mutltiplier, step_unit} = this.getMultiplierAndStepUnit();
+        this.currentLayerDateTimeIndex = moment(this.layer.start_date).add(this.range.value * mutltiplier, step_unit);
         await this.getTimeLayer()
       },
       /**
@@ -158,8 +171,9 @@ export default function Sidebaritem({service, options={}}={}){
        * @param status 1 play, -1 back
        */
       setCurrentDateTime(status){
-        const step = this.getStepValue();
-        this.currentLayerDateTimeIndex = moment(this.currentLayerDateTimeIndex)[status === 1 ? 'add' : 'subtract'](step, this.layer.options.stepunit);
+        const step = 1*this.getStepValue();
+        const {multiplier, step_unit} = this.getMultiplierAndStepUnit();
+        this.currentLayerDateTimeIndex = moment(this.currentLayerDateTimeIndex)[status === 1 ? 'add' : 'subtract'](step * multiplier, step_unit);
       },
       /**
        * Method to calculate step valued based on current input step value and possible multipliere sted (es. decde, centuries)
@@ -180,6 +194,7 @@ export default function Sidebaritem({service, options={}}={}){
           this.intervalEventHandler = setInterval(async ()=> {
            if (!waiting) {
              try {
+               console.log('qui')
                const step = 1*this.step;
                this.range.value = status === 1 ? this.range.value + step: this.range.value - step;
                if (this.range.value > this.range.max || this.range.value < 0) {
@@ -189,7 +204,9 @@ export default function Sidebaritem({service, options={}}={}){
                } else {
                  this.setCurrentDateTime(status);
                  waiting = true;
-                 await this.getTimeLayer();
+                 try {
+                   await this.getTimeLayer();
+                 } catch(err){console.log(err)}
                  waiting = false;
                }
              } catch(err){
@@ -246,6 +263,19 @@ export default function Sidebaritem({service, options={}}={}){
       }
     },
     watch: {
+      current_step_unit: {
+        async handler(step_unit){
+          // set true to change
+          this.change_step_unit = true;
+          this.layer.options.stepunit = step_unit;
+          this.current_step_unit_label = STEP_UNITS.find(step_unit => step_unit.moment === this.layer.options.stepunit).label;
+          this.initLayerTimeseries();
+          await this.$nextTick();
+          // set false to see changed translation of label
+          this.change_step_unit = false;
+        },
+        immediate: false
+      },
       /**
        * Listen change layer on selection
        * @param new_index_layer

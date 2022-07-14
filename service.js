@@ -1,23 +1,11 @@
+import {STEP_UNITS} from './constant';
 const {base, inherit, XHR, toRawType, getRandomColor} = g3wsdk.core.utils;
-const GUI = g3wsdk.gui.GUI;
+const {GUI, ComponentsFactory} = g3wsdk.gui;
 const {DataRouterService} = g3wsdk.core.data;
 const {PickCoordinatesInteraction} = g3wsdk.ol.interactions;
 const BasePluginService = g3wsdk.core.plugin.PluginService;
-const ComponentsFactory = g3wsdk.gui.ComponentsFactory;
-const ChartsFactory = g3wsdk.gui.vue.Charts.ChartsFactory;
+const {ChartsFactory} = g3wsdk.gui.vue.Charts;
 const BASE_API_URL_RASTER_TYPE = '/qtimeseries/api/raster/serie/';
-const VECTOR_STEP_UNITS = {
-  c: '100:years',
-  dec:'10:years',
-  y: "years",
-  mon: "months",
-  d: "days",
-  h: "hours",
-  min: "minutes",
-  s: "seconds",
-  ms: "milliseconds"
-};
-
 const FORMAT_DATE_TIME_FIELD_TYPE = {
   'date': 'YYYY-MM-DD',
   'datetime': 'YYYY-MM-DD mm:hh:ss'
@@ -26,7 +14,7 @@ const FORMAT_DATE_TIME_FIELD_TYPE = {
 const WMS_PARAMETER = {
   'raster': 'RBAND',
   'vector': 'FILTER',
-  'wmts': 'TIME'
+  'wmst': 'TIME'
 };
 
 const UPDATE_MAPLAYER_OPTIONS = {
@@ -65,11 +53,12 @@ function PluginService(){
             url: `${BASE_API_URL_RASTER_TYPE}${this.project.getId()}/${layer.id}`
           });
           layer.options.stepunit = 'days';
+          layer.options.type = 'raster';
           layer.options.stepunitmultiplier = 1;
           break;
       }
     }
-    this.addVectorLayerFromConfigProject();
+    this.addProjectLayerFromConfigProject();
     const show = this.config.layers.length > 0;
     if (show) {
       this.state = {
@@ -201,33 +190,63 @@ function PluginService(){
     active ? this.activeChartInteraction(layer) : this.deactiveChartInteraction()
   };
 
-  this.addVectorLayerFromConfigProject = function(){
+  /**
+   * Method to add vector and wmst layer from project layers configuration qtimseries
+   */
+  this.addProjectLayerFromConfigProject = function(){
     this.project.getConfigLayers().forEach(layerConfig => {
       if (toRawType(layerConfig.qtimeseries) === 'Object') {
-        const {field, units='d', mode, start_date=null, end_date=null} = layerConfig.qtimeseries;
-        if (field){
-          const projectLayer = this.project.getLayerById(layerConfig.id);
-          const field_type = projectLayer.getFieldByName(field).type;
-          const stepunit_and_multiplier = VECTOR_STEP_UNITS[units].split(':');
-          const format = FORMAT_DATE_TIME_FIELD_TYPE[field_type];
-          const stepunit = stepunit_and_multiplier.length > 1 ? stepunit_and_multiplier[1]: stepunit_and_multiplier[0];
-          const stepunitmultiplier = stepunit_and_multiplier.length > 1 ? 1*stepunit_and_multiplier[0] : 1;
-          const layer = {
-            id: layerConfig.id,
-            type: 'vector', // added vector layer
-            name: projectLayer.getName(),
-            wmsname: projectLayer.getWMSLayerName(),
-            start_date,
-            end_date,
-            options: {
-              range_max: moment(end_date).diff(moment(start_date), stepunit) - 1,
-              format,
-              stepunit,
-              stepunitmultiplier,
-              field
+        const type = layerConfig.source.type === "ogr" ? 'vector' : "wmst";
+        const {field, duration=1, units='d', start_date=null, end_date=null} = layerConfig.qtimeseries;
+        const stepunit_and_multiplier = STEP_UNITS.find(step_unit => step_unit.qgis === units).moment.split(':');
+        let stepunit = stepunit_and_multiplier.length > 1 ? stepunit_and_multiplier[1]: stepunit_and_multiplier[0];
+        switch (type) {
+          case 'vector':
+            if (field){
+              const projectLayer = this.project.getLayerById(layerConfig.id);
+              const field_type = projectLayer.getFieldByName(field).type;
+              const stepunit_and_multiplier =  STEP_UNITS.find(step_unit => step_unit.qgis === units).moment.split(':');
+              const stepunitmultiplier = stepunit_and_multiplier.length > 1 ? 1*stepunit_and_multiplier[0] : 1;
+              const format = FORMAT_DATE_TIME_FIELD_TYPE[field_type];
+              const layer = {
+                id: layerConfig.id,
+                type,
+                name: projectLayer.getName(),
+                wmsname: projectLayer.getWMSLayerName(),
+                start_date,
+                end_date,
+                options: {
+                  range_max: moment(end_date).diff(moment(start_date), stepunit) - 1,
+                  format,
+                  type,
+                  stepunit,
+                  stepunitmultiplier,
+                  field
+                }
+              };
+              this.config.layers.push(layer);
             }
-          };
-          this.config.layers.push(layer);
+            break;
+          case "wmst":
+            const projectLayer = this.project.getLayerById(layerConfig.id);
+            stepunit = 'days';
+            const layer = {
+              id: layerConfig.id,
+              type,
+              name: projectLayer.getName(),
+              wmsname: projectLayer.getWMSLayerName(),
+              start_date,
+              end_date,
+              options: {
+                range_max: moment(end_date).diff(moment(start_date), stepunit) - 1,
+                format: moment(start_date).creationData().format,
+                stepunit,
+                type,
+                stepunitmultiplier: 1,
+              }
+            };
+            this.config.layers.push(layer);
+            break;
         }
       }
     })
@@ -248,8 +267,9 @@ function PluginService(){
       projectLayer.setChecked(true);
       const mapLayerToUpdate = this.mapService.getMapLayerByLayerId(id);
       mapLayerToUpdate.once('loadend', ()=> {
+        const info =  endDate ? `${findDate} - ${endDate}` : findDate;
         this.mapService.showMapInfo({
-          info: endDate ? `${findDate} - ${endDate}` : findDate ,
+          info,
           style: {
             fontSize: '1.2em',
             color: 'grey',
@@ -258,6 +278,19 @@ function PluginService(){
           }
         });
         resolve();
+      });
+      mapLayerToUpdate.once('loaderror', () => {
+        const info =  endDate ? `${findDate} - ${endDate}` : findDate;
+        this.mapService.showMapInfo({
+          info,
+          style: {
+            fontSize: '1.2em',
+            color: 'red',
+            border: '1px solid red',
+            padding: '10px'
+          }
+        });
+        reject();
       });
       const {type} = layer;
       switch (type) {
@@ -281,19 +314,20 @@ function PluginService(){
             resolve();
           }
           break;
-        case 'wmts':
+        case 'wmst':
           findDate = moment(date).format(layer.options.format);
           this.mapService.updateMapLayer(mapLayerToUpdate, {
             force: true,
             [WMS_PARAMETER[layer.type]]: findDate  // in case of vector layer
           }, UPDATE_MAPLAYER_OPTIONS);
+          break;
         case 'vector':
+          const {multiplier, step_unit} = this.getMultiplierAndStepUnit(layer);
           findDate = moment(date).format(layer.options.format);
-          endDate = moment(date).add(step, layer.options.stepunit).format(layer.options.format);
+          endDate = moment(date).add(step * multiplier, step_unit).format(layer.options.format);
           const isAfter = moment(endDate).isAfter(layer.end_date);
-          let wmsParam = `${layer.wmsname}:"${layer.options.field}" = '${findDate}'`;
-          if (isAfter) endDate = findDate;
-          else wmsParam = `${layer.wmsname}:"${layer.options.field}" >= '${findDate}' AND "${layer.options.field}" < '${endDate}'`;
+          if (isAfter) endDate = layer.end_date;
+          const wmsParam = `${layer.wmsname}:"${layer.options.field}" >= '${findDate}' AND "${layer.options.field}" < '${endDate}'`;
           this.mapService.updateMapLayer(mapLayerToUpdate, {
             force: true,
             [WMS_PARAMETER[layer.type]]: wmsParam  // in case of vector layer
@@ -301,6 +335,14 @@ function PluginService(){
           break;
       }
     })
+  };
+
+  this.getMultiplierAndStepUnit = function(layer){
+    const multiplier_step_unit = layer.options.stepunit.split(':');
+    return {
+      multiplier: multiplier_step_unit.length > 1 ? 1* multiplier_step_unit[0] : 1,
+      step_unit: multiplier_step_unit.length > 1 ? multiplier_step_unit[1] : layer.options.stepunit
+    }
   };
 
   this.resetTimeLayer = function(layer){
