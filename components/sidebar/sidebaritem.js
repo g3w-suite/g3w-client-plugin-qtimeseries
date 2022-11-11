@@ -191,7 +191,6 @@ export default function Sidebaritem({service, options={}}={}){
           this.intervalEventHandler = setInterval(async ()=> {
            if (!waiting) {
              try {
-               console.log('qui')
                const step = 1*this.step;
                this.range.value = status === 1 ? this.range.value + step: this.range.value - step;
                if (this.range.value > this.range.max || this.range.value < 0) {
