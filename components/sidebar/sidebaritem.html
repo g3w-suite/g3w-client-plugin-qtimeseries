@@ -12,8 +12,8 @@
           <option v-for="(layer, index) in layers" :value="index" :key="layer.id">{{layer.name}}</option>
         </select>
         <div v-if="!changed_layer">
-          <datetime :label="'plugins.qtimeseries.startdate'" :enabledDates="layer.options.dates" :minDate="layerMinDate" :maxDate="layerMaxDate" :type="'datetime'" :value="layer.start_date" @change="changeStartDateTime"></datetime>
-          <datetime :label="'plugins.qtimeseries.enddate'" :enabledDates="layer.options.dates" :minDate="layerMinDate" :maxDate="layerMaxDate" :type="'datetime'" :value="layer.end_date" @change="changeEndDateTime"></datetime>
+          <datetime :label="'plugins.qtimeseries.startdate'" :format="format" :enabledDates="layer.options.dates" :minDate="min_date" :maxDate="layer.end_date" :type="'datetime'" :value="layer.start_date" @change="changeStartDateTime"></datetime>
+          <datetime :label="'plugins.qtimeseries.enddate'" :format="format" :enabledDates="layer.options.dates" :minDate="layer.start_date" :maxDate="max_date" :type="'datetime'" :value="layer.end_date" @change="changeEndDateTime"></datetime>
           <label  v-if="!change_step_unit"  v-t-plugin:pre="'qtimeseries.step'">[<span v-t-plugin="`qtimeseries.stepsunit.${current_step_unit_label}`"></span> ]</label>
           <input class="form-control" type="number" :min="range.min" :max="range.max" :step="layer.options.stepunitmultiplier" v-model="step">
           <range v-disabled="range.max === range.min " label="plugins.qtimeseries.steps" :max="range.max" :value="range.value" :min="range.min" ref="rangecomponent" @change-range="changeRangeStep"></range>

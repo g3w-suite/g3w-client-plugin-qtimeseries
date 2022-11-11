@@ -10,6 +10,9 @@ export default function Sidebaritem({service, options={}}={}){
         layers,
         panel,
         step: 1,
+        format: 'YYYY-MM-DD HH:mm:ss',
+        min_date: layers[0].start_date,
+        max_date: layers[0].end_date,
         step_units: STEP_UNITS,
         current_step_unit: layers[0].options.stepunit,
         change_step_unit: false,
@@ -34,12 +37,6 @@ export default function Sidebaritem({service, options={}}={}){
         this.changed_layer = true;
         setTimeout(()=> this.changed_layer = false);
         return this.layers[this.current_layer_index];
-      },
-      layerMinDate(){
-        return this.layer.start_date ? this.layer.start_date : this.layer.options.dates && this.layer.options.dates[0];
-      },
-      layerMaxDate(){
-        return this.layer.end_date ? this.layer.end_date : this.layer.options.dates && this.layer.options.dates[this.layer.options.dates.length -1];
       },
       disablerun(){
         return this.status === 0 && (!this.layer.start_date || !this.layer.end_date) ;
