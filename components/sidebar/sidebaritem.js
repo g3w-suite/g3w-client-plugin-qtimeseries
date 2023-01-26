@@ -259,6 +259,12 @@ export default function Sidebaritem({service, options={}}={}){
       }
     },
     watch: {
+      /**
+       * @since v3.5 add step watch
+       */
+      step(){
+        this.getTimeLayer();
+      },
       current_step_unit: {
         async handler(step_unit){
           // set true to change

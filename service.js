@@ -171,7 +171,11 @@ function PluginService(){
   this.addProjectLayerFromConfigProject = function(){
     this.project.getConfigLayers().forEach(layerConfig => {
       if (toRawType(layerConfig.qtimeseries) === 'Object') {
-        const {field, duration=1, units='d', start_date=null, end_date=null} = layerConfig.qtimeseries;
+        let {field, duration=1, units='d', start_date=null, end_date=null} = layerConfig.qtimeseries;
+        const startDateTimeZoneOffset = new Date(start_date).getTimezoneOffset();
+        const endDateTimeZoneOffset = new Date(end_date).getTimezoneOffset();
+        start_date = moment(start_date).add(startDateTimeZoneOffset, 'minutes');
+        end_date = moment(end_date).add(endDateTimeZoneOffset, 'minutes');
         const stepunit_and_multiplier = STEP_UNITS.find(step_unit => step_unit.qgis === units).moment.split(':');
         let stepunit = stepunit_and_multiplier.length > 1 ? stepunit_and_multiplier[1]: stepunit_and_multiplier[0];
         const stepunitmultiplier = stepunit_and_multiplier.length > 1 ? 1*stepunit_and_multiplier[0] : 1;
@@ -192,7 +196,7 @@ function PluginService(){
             stepunitmultiplier,
             field
           }
-        })
+        });
       }
     })
   };
@@ -238,10 +242,12 @@ function PluginService(){
         reject();
       });
       const {multiplier, step_unit} = this.getMultiplierAndStepUnit(layer);
-      findDate = moment(date).format();
-      endDate = moment(findDate).add(step * multiplier, step_unit).format();
-      const isAfter = moment(endDate).isAfter(layer.end_date);
-      if (isAfter) endDate = moment(layer.end_date).format();
+      const findDateTimeZoneOffset = new Date(date).getTimezoneOffset();
+      findDate = moment(date).add(Math.abs(findDateTimeZoneOffset), 'minutes').toISOString();
+      endDate = moment(findDate).add(step * multiplier, step_unit).toISOString();
+      const layerEndDate = moment(layer.end_date).add(Math.abs(findDateTimeZoneOffset), 'minutes').toISOString();
+      const isAfter = moment(endDate).isAfter(layerEndDate);
+      if (isAfter) endDate = layerEndDate;
       const wmsParam = `${findDate}/${endDate}`;
       this.mapService.updateMapLayer(mapLayerToUpdate, {
         force: true,
