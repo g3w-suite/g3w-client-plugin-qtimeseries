@@ -9,7 +9,7 @@ export default function Sidebaritem({service, options={}}={}){
       return {
         layers,
         panel,
-        step: 1,
+        step: layers[0].options.step,
         format: 'YYYY-MM-DD HH:mm:ss',
         min_date: layers[0].start_date,
         max_date: layers[0].end_date,
@@ -52,6 +52,7 @@ export default function Sidebaritem({service, options={}}={}){
        */
       initLayerTimeseries(){
         this.status = 0;
+        this.min_date = this.layer.start_date;
         this.currentLayerDateTimeIndex = this.layer.start_date;
         this.range.value = 0;
         this.range.min = 0;

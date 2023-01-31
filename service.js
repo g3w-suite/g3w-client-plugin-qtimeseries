@@ -171,7 +171,7 @@ function PluginService(){
   this.addProjectLayerFromConfigProject = function(){
     this.project.getConfigLayers().forEach(layerConfig => {
       if (toRawType(layerConfig.qtimeseries) === 'Object') {
-        let {field, duration=1, units='d', start_date=null, end_date=null} = layerConfig.qtimeseries;
+        let {field, step=1, units='d', start_date=null, end_date=null} = layerConfig.qtimeseries;
         const startDateTimeZoneOffset = new Date(start_date).getTimezoneOffset();
         const endDateTimeZoneOffset = new Date(end_date).getTimezoneOffset();
         start_date = moment(start_date).add(startDateTimeZoneOffset, 'minutes');
@@ -192,6 +192,7 @@ function PluginService(){
           options: {
             range_max: moment(end_date).diff(moment(start_date), stepunit) - 1,
             format,
+            step, //added
             stepunit,
             stepunitmultiplier,
             field
@@ -264,11 +265,11 @@ function PluginService(){
     }
   };
 
-  this.resetTimeLayer = function(layer){
+  this.resetTimeLayer = function(layer, hideInfo=false){
     return new Promise((resolve, reject) => {
       if (layer.timed){
         const mapLayerToUpdate = this.mapService.getMapLayerByLayerId(layer.id);
-        mapLayerToUpdate.once('loadend',  () => {
+        hideInfo && mapLayerToUpdate.once('loadend',  () => {
           this.mapService.showMapInfo();
           resolve();
         });
@@ -292,7 +293,7 @@ function PluginService(){
    */
   this.close = function(){
     const layer = this.state.layers.find(layer => layer.timed);
-    layer && this.resetTimeLayer(layer);
+    layer && this.resetTimeLayer(layer, true);
     this.state.panel.open = false;
     this.deactiveChartInteraction();
   };
