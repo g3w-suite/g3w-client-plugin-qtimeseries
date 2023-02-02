@@ -1,21 +1,18 @@
 <ul id="g3w_raster_timeseries_content" class="treeview-menu" style="position:relative; padding: 10px;color:#FFFFFF">
   <li>
-    <div v-disabled="status !== 0" v-if="layer.type === 'raster'" v-t-tooltip.create="'plugins.qtimeseries.tooltips.showcharts'" data-placement="top" data-toggle="tooltip" style="padding: 5px; border:1px solid" class="skin-border skin-tooltip-top">
-      <button  class="sidebar-button skin-button btn btn-block" :class="{toggled: showCharts}" style="margin: 2px;" @click.stop="showRasterLayerCharts">
-        <span :class="g3wtemplate.getFontClass('chart-line')"></span>
-      </button>
-    </div>
-    <div v-disabled="showCharts">
-      <form v-disabled="formDisabled">
-        <label style="display: block">Layer</label>
-        <select class="form-control" id="timeseriesrasterlayer" v-select2="'current_layer_index'" :search="false">
-          <option v-for="(layer, index) in layers" :value="index" :key="layer.id">{{layer.name}}</option>
+    <form v-disabled="formDisabled">
+      <label style="display: block">Layer</label>
+      <select id="timeserieslayer" class="form-control" ref="select-layers"
+          :multiple="layers.length > 0"
+          v-select2="'current_layers_index'"
+          :search="false">
+          <option v-for="(layer, index) in layers" :value="index" :key="layer.id" :selected="current_layers_index.indexOf(index.toString()) > -1">{{layer.name}}</option>
         </select>
         <div v-if="!changed_layer">
-          <datetime :label="'plugins.qtimeseries.startdate'" :format="format" :enabledDates="layer.options.dates" :minDate="min_date" :maxDate="layer.end_date" :type="'datetime'" :value="layer.start_date" @change="changeStartDateTime"></datetime>
-          <datetime :label="'plugins.qtimeseries.enddate'" :format="format" :enabledDates="layer.options.dates" :minDate="layer.start_date" :maxDate="max_date" :type="'datetime'" :value="layer.end_date" @change="changeEndDateTime"></datetime>
+          <datetime :label="'plugins.qtimeseries.startdate'" :format="format" :minDate="min_date" :maxDate="end_date" :type="'datetime'" :value="start_date" @change="changeStartDateTime"></datetime>
+          <datetime :label="'plugins.qtimeseries.enddate'" :format="format" :minDate="start_date" :maxDate="max_date" :type="'datetime'" :value="end_date" @change="changeEndDateTime"></datetime>
           <label  v-if="!change_step_unit"  v-t-plugin:pre="'qtimeseries.step'">[<span v-t-plugin="`qtimeseries.stepsunit.${current_step_unit_label}`"></span> ]</label>
-          <input class="form-control" type="number" :min="range.min" :max="range.max" :step="layer.options.stepunitmultiplier" v-model="step">
+          <input class="form-control" type="number" :min="range.min" :max="range.max" :step="stepunitmultiplier" v-model="step">
           <range v-disabled="range.max === range.min " label="plugins.qtimeseries.steps" :max="range.max" :value="range.value" :min="range.min" ref="rangecomponent" @change-range="changeRangeStep"></range>
           <label style="display: block"></label>
           <select class="form-control" id="g3w-timeseries-select-unit" v-select2="'current_step_unit'" :search="false">
@@ -47,7 +44,6 @@
           <span :class="g3wtemplate.getFontClass('fast-forward')"></span>
         </button>
       </div>
-    </div>
   </li>
 </ul>
 

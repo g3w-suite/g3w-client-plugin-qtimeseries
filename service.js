@@ -46,125 +46,7 @@ function PluginService(){
     }
     this.emit('ready', show);
   };
-
-  this.activeChartInteraction = function(layer){
-    const self = this;
-    this.mapService.disableClickMapControls(true);
-    const interaction = new PickCoordinatesInteraction();
-    this.getChartConfig.interaction = interaction;
-    this.mapService.addInteraction(interaction);
-    this.mapService.getMap().addLayer(this.getChartConfig.layer);
-    interaction.setActive(true);
-    this.getChartConfig.keyListener = interaction.on('picked', async evt =>{
-      const {coordinate} = evt;
-      const color = getRandomColor();
-      const style = new ol.style.Style({
-        image: new ol.style.RegularShape({
-          fill: new ol.style.Fill({
-            color
-          }),
-          stroke: new ol.style.Stroke({
-            color,
-            width: 3
-          }),
-          points: 4,
-          radius: 10,
-          radius2: 0,
-          angle: Math.PI / 4,
-        })
-      });
-      const feature = new ol.Feature(new ol.geom.Point(coordinate));
-      feature.setStyle(style);
-      this.getChartConfig.layer.getSource().addFeature(feature);
-      const {data=[]} = await DataRouterService.getData('query:coordinates', {
-        inputs: {
-          layerIds: [layer.id],
-          coordinates: coordinate,
-          feature_count: 1
-        },
-        outputs: false
-      });
-      const values = [];
-      Object.entries(data[0].features[0].getProperties()).forEach(([attribute, value])=>{
-        if (attribute !== 'geometry' ||  attribute !== 'g3w_fid'){
-          values.push(value);
-        }
-      });
-      if (this.getChartConfig.chart){
-        this.getChartConfig.chart.load({
-          columns: [
-            [coordinate.toString(), ...values]
-          ],
-          colors: {
-            [coordinate.toString()]: color
-          }
-        })
-      } else {
-        const content = ComponentsFactory.build({
-          vueComponentObject: ChartsFactory.build({
-            type: 'c3:lineXY',
-            hooks: {
-              created(){
-                this.setConfig({
-                  data: {
-                    x: 'x',
-                    columns: [
-                      ['x', ...layer.options.dates],
-                      [coordinate.toString(), ...values]
-                    ],
-                    colors: {
-                      [coordinate.toString()]: color
-                    }
-                  },
-                  axis: {
-                    x: {
-                      type: 'timeseries',
-                      tick: {
-                        format: '%Y-%m-%d'
-                      }
-                    }
-                  }
-                });
-                this.$once('chart-ready', c3chart =>{
-                  self.getChartConfig.chart = c3chart;
-                  setTimeout(()=>{
-                    this.resize();
-                  })
-                })
-              }
-            }
-          })
-        });
-        GUI.showContent({
-          title: layer.name,
-          perc: 50,
-          split: 'v',
-          closable: false,
-          content
-        });
-      }
-    })
-  };
-
-  this.deactiveChartInteraction = function(){
-    if (this.getChartConfig.interaction) {
-      this.mapService.disableClickMapControls(false);
-      this.getChartConfig.layer.getSource().clear();
-      this.mapService.getMap().removeLayer(this.getChartConfig.layer);
-      this.getChartConfig.interaction.setActive(false);
-      ol.Observable.unByKey(this.getChartConfig.keyListener);
-      this.mapService.removeInteraction(this.getChartConfig.interaction);
-      this.getChartConfig.interaction = null;
-      this.getChartConfig.keyListener = null;
-      this.getChartConfig.chart = null;
-      GUI.closeContent();
-    }
-  };
-
-  this.chartsInteraction = function({active=false, layer}={}){
-    active ? this.activeChartInteraction(layer) : this.deactiveChartInteraction()
-  };
-
+  
   /**
    * Method to add  layer from project layers configuration qtimseries
    */
@@ -208,76 +90,92 @@ function PluginService(){
    * @param date
    * @returns {Promise<unknown>}
    */
-  this.getTimeLayer = function({layer, date, step}={}){
+  this.getTimeLayer = function({layers, date, step, end_date, stepunit}={}){
     let findDate;
     let endDate;
+    console.log({
+      date,
+      end_date
+    })
     return new Promise((resolve, reject) =>{
-      const {id} = layer;
-      const projectLayer = this.project.getLayerById(id);
-      projectLayer.setChecked(true);
-      const mapLayerToUpdate = this.mapService.getMapLayerByLayerId(id);
-      mapLayerToUpdate.once('loadend', ()=> {
-        const info =  endDate ? `${findDate} - ${endDate}` : findDate;
-        this.mapService.showMapInfo({
-          info,
-          style: {
-            fontSize: '1.2em',
-            color: 'grey',
-            border: '1px solid grey',
-            padding: '10px'
-          }
+      const ids = layers.map(layer => layer.id);
+      const projectLayers = ids.map(id => this.project.getLayerById(id));
+      projectLayers.forEach(projectLayer => projectLayer.setChecked(true));
+      const mapLayersToUpdate = ids.map(id => this.mapService.getMapLayerByLayerId(id));
+      let mapLayersToUpdateDone = mapLayersToUpdate.length;
+      mapLayersToUpdate.forEach(mapLayerToUpdate => {
+        mapLayerToUpdate.once('loadend', ()=> {
+          const info =  endDate ? `${findDate} - ${endDate}` : findDate;
+          this.mapService.showMapInfo({
+            info,
+            style: {
+              fontSize: '1.2em',
+              color: 'grey',
+              border: '1px solid grey',
+              padding: '10px'
+            }
+          });
+          mapLayersToUpdateDone-=1;
+          mapLayersToUpdateDone === 0 && resolve();
         });
-        resolve();
-      });
-      mapLayerToUpdate.once('loaderror', () => {
-        const info =  endDate ? `${findDate} - ${endDate}` : findDate;
-        this.mapService.showMapInfo({
-          info,
-          style: {
-            fontSize: '1.2em',
-            color: 'red',
-            border: '1px solid red',
-            padding: '10px'
-          }
+        mapLayerToUpdate.once('loaderror', () => {
+          const info =  endDate ? `${findDate} - ${endDate}` : findDate;
+          this.mapService.showMapInfo({
+            info,
+            style: {
+              fontSize: '1.2em',
+              color: 'red',
+              border: '1px solid red',
+              padding: '10px'
+            }
+          });
+          mapLayersToUpdateDone-=1;
+          mapLayersToUpdateDone === 0 && reject();
         });
-        reject();
       });
-      const {multiplier, step_unit} = this.getMultiplierAndStepUnit(layer);
+      const {multiplier, step_unit} = this.getMultiplierAndStepUnit(stepunit);
       const findDateTimeZoneOffset = new Date(date).getTimezoneOffset();
       findDate = moment(date).add(Math.abs(findDateTimeZoneOffset), 'minutes').toISOString();
       endDate = moment(findDate).add(step * multiplier, step_unit).toISOString();
-      const layerEndDate = moment(layer.end_date).add(Math.abs(findDateTimeZoneOffset), 'minutes').toISOString();
+      const layerEndDate = moment(end_date).add(Math.abs(findDateTimeZoneOffset), 'minutes').toISOString();
       const isAfter = moment(endDate).isAfter(layerEndDate);
       if (isAfter) endDate = layerEndDate;
       const wmsParam = `${findDate}/${endDate}`;
-      this.mapService.updateMapLayer(mapLayerToUpdate, {
-        force: true,
-        [WMS_PARAMETER]: wmsParam  
-      }, UPDATE_MAPLAYER_OPTIONS);
+      mapLayersToUpdate.forEach(mapLayerToUpdate => {
+        this.mapService.updateMapLayer(mapLayerToUpdate, {
+          force: true,
+          [WMS_PARAMETER]: wmsParam
+        }, UPDATE_MAPLAYER_OPTIONS);
+      })
     })
   };
 
-  this.getMultiplierAndStepUnit = function(layer){
-    const multiplier_step_unit = layer.options.stepunit.split(':');
+  this.getMultiplierAndStepUnit = function(stepunit){
+    const multiplier_step_unit = stepunit.split(':');
     return {
       multiplier: multiplier_step_unit.length > 1 ? 1* multiplier_step_unit[0] : 1,
-      step_unit: multiplier_step_unit.length > 1 ? multiplier_step_unit[1] : layer.options.stepunit
+      step_unit: multiplier_step_unit.length > 1 ? multiplier_step_unit[1] : stepunit
     }
   };
 
-  this.resetTimeLayer = function(layer, hideInfo=false){
+  this.resetTimeLayer = function(layers, hideInfo=false){
     return new Promise((resolve, reject) => {
-      if (layer.timed){
-        const mapLayerToUpdate = this.mapService.getMapLayerByLayerId(layer.id);
-        hideInfo && mapLayerToUpdate.once('loadend',  () => {
-          this.mapService.showMapInfo();
-          resolve();
-        });
-        this.mapService.updateMapLayer(mapLayerToUpdate, {
-          force: true,
-          [WMS_PARAMETER]: undefined
-        });
-      } else resolve();
+      let layersLength = layers.length;
+      layers.forEach(layer => {
+        if (layer.timed){
+          const mapLayerToUpdate = this.mapService.getMapLayerByLayerId(layer.id);
+          hideInfo && mapLayerToUpdate.once('loadend',  () => {
+            this.mapService.showMapInfo();
+            layersLength-=1;
+            layersLength === 0 && resolve();
+          });
+          this.mapService.updateMapLayer(mapLayerToUpdate, {
+            force: true,
+            [WMS_PARAMETER]: undefined
+          });
+        } else resolve();
+      })
+      
     })
   };
 
@@ -292,10 +190,9 @@ function PluginService(){
    * Method on close time series Panel
    */
   this.close = function(){
-    const layer = this.state.layers.find(layer => layer.timed);
-    layer && this.resetTimeLayer(layer, true);
+    const layers = this.state.layers.filter(layer => layer.timed);
+    layers && this.resetTimeLayer(layers, true);
     this.state.panel.open = false;
-    this.deactiveChartInteraction();
   };
 
   /**
