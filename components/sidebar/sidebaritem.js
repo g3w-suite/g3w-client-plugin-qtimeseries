@@ -28,24 +28,39 @@ export default function Sidebaritem({service, options={}}={}){
           max:0
         },
         changed_layer: false,
-        current_layers_index: ['0'],
+        current_layers_index: layers.map((_,index) => index.toString()),
         currentLayerDateTimeIndex: null,
-        showCharts: false,
         status: 0, // status  [1: play, -1: back, 0: pause]
       };
     },
     computed: {
+      /**
+       * set from disable property
+       * @returns {boolean}
+       */
       formDisabled(){
-        return this.status !== 0 || this.showCharts;
+        return this.status !== 0;
       },
+      /**
+       * Array of selected layers
+       * @returns {unknown[]}
+       */
       select_layers(){
         this.changed_layer = true;
         setTimeout(()=> this.changed_layer = false);
         return this.current_layers_index.map(index => this.layers[index]);
       },
+      /**
+       * Property to disable run button
+       * @returns {boolean|boolean}
+       */
       disablerun(){
         return this.status === 0 && (!this.start_date || !this.end_date) ;
       },
+      /**
+       * check if dates are valid
+       * @returns {boolean|boolean}
+       */
       validRangeDates(){
         const {multiplier, step_unit} = this.getMultiplierAndStepUnit();
         return this.validateStartDateEndDate() && moment(this.end_date).diff(moment(this.start_date), step_unit) / multiplier >= this.getStepValue();
@@ -87,6 +102,9 @@ export default function Sidebaritem({service, options={}}={}){
         this.range.max = this.validateStartDateEndDate() ?
           Number.parseInt(moment(this.end_date).diff(moment(this.start_date), step_unit) / multiplier * this.stepunitmultiplier) : 0;
       },
+      /**
+       * Method call when change range input step unit
+       */
       changeRangeInputOnChangeStepUnit(){
         // reset range value to 0
         this.range.value = 0;
@@ -265,10 +283,14 @@ export default function Sidebaritem({service, options={}}={}){
           this.getTimeLayer();
         }
       },
+      /**
+       * Method to remove clear x symbol to remove
+       * one layer from multiple select. Work with at least one layer
+       */
       hideSingleLayerSelectionClear(){
         $(this.$refs['select-layers'])
           .siblings('.select2-container')
-          .find('.select2-selection__choice__remove').hide()
+          .find('.select2-selection__choice__remove').hide();
       }
     },
     watch: {
@@ -278,6 +300,9 @@ export default function Sidebaritem({service, options={}}={}){
       step(){
         this.getTimeLayer();
       },
+      /**
+       * handler when current step unit is change
+       */
       current_step_unit: {
         async handler(step_unit){
           // set true to change
@@ -291,12 +316,18 @@ export default function Sidebaritem({service, options={}}={}){
         },
         immediate: false
       },
-      async current_layers_index(new_index_layers, old_index_layers){
-        await this.$nextTick();
-        new_index_layers.length === 1 && this.hideSingleLayerSelectionClear();
-        const previousLayers = old_index_layers.map(index => this.layers[index]);
-        this.resetTimeLayer(previousLayers);
-        this.initLayerTimeseries();
+      current_layers_index: {
+        immediate: true,
+        async handler(new_index_layers, old_index_layers){
+        /**
+         * check if try to remove selected layer
+         */
+          await this.$nextTick();
+          new_index_layers.length === 1 && this.hideSingleLayerSelectionClear();
+          const previousLayers = old_index_layers.map(index => this.layers[index]);
+          this.resetTimeLayer(previousLayers);
+          this.initLayerTimeseries();
+        }
       },
       /**
        * Listener of open close panel
@@ -318,8 +349,30 @@ export default function Sidebaritem({service, options={}}={}){
       this.intervalEventHandler = null;
     },
     async mounted(){
+      /**
+       * method to disable (add g3w-disable class) to option select
+       * for avoid to haven't no layer selected. At least need to has one layer to work with
+       */
+      this.disabledSingleLayerClickUnSelect = ()=> {
+        setTimeout(() => {
+          if (this.select_layers.length === 1)
+            $('.select2-results__options li[aria-selected="true"]').addClass('g3w-disabled');
+          else $('.select2-results__options li').removeClass('g3w-disabled');
+        })
+      };
       await this.$nextTick();
-      this.hideSingleLayerSelectionClear();
+      /**
+       * listen one sidebar panel plugin to register event select2:open
+       */
+      service.onafter('open', ()=> {
+        $('#timeserieslayer').on('select2:open', this.disabledSingleLayerClickUnSelect);
+      });
+      /**
+       * listen close sidebar plugin to unregister select2:open
+       */
+      service.onafter('close', ()=> {
+        $('#timeserieslayer').off('select2:open', this.disabledSingleLayerClickUnSelect);
+      })
     },
     beforeDestroy(){
       service.clear();

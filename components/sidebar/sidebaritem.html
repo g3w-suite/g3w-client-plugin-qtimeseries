@@ -6,7 +6,9 @@
           :multiple="layers.length > 0"
           v-select2="'current_layers_index'"
           :search="false">
-          <option v-for="(layer, index) in layers" :value="index" :key="layer.id" :selected="current_layers_index.indexOf(index.toString()) > -1">{{layer.name}}</option>
+          <option v-for="(layer, index) in layers" :value="index" :key="layer.id"
+            :selected="current_layers_index.indexOf(index.toString()) > -1">{{layer.name}}
+          </option>
         </select>
         <div v-if="!changed_layer">
           <datetime :label="'plugins.qtimeseries.startdate'" :format="format" :minDate="min_date" :maxDate="end_date" :type="'datetime'" :value="start_date" @change="changeStartDateTime"></datetime>

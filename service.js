@@ -1,10 +1,7 @@
 import {STEP_UNITS} from './constant';
-const {base, inherit, toRawType, getRandomColor} = g3wsdk.core.utils;
-const {GUI, ComponentsFactory} = g3wsdk.gui;
-const {DataRouterService} = g3wsdk.core.data;
-const {PickCoordinatesInteraction} = g3wsdk.ol.interactions;
+const {base, inherit, toRawType} = g3wsdk.core.utils;
+const {GUI} = g3wsdk.gui;
 const BasePluginService = g3wsdk.core.plugin.PluginService;
-const {ChartsFactory} = g3wsdk.gui.vue.Charts;
 
 const WMS_PARAMETER = 'TIME';
 
@@ -17,6 +14,15 @@ const UPDATE_MAPLAYER_OPTIONS = {
  * @constructor
  */
 function PluginService(){
+  this.setters = {
+    open(){
+      this._open();
+    },
+    close(){
+      this._close()
+    }
+  };
+
   base(this);
   this.init = async function(config={}) {
     this.project = this.getCurrentProject();
@@ -91,17 +97,21 @@ function PluginService(){
    * @returns {Promise<unknown>}
    */
   this.getTimeLayer = function({layers, date, step, end_date, stepunit}={}){
-    let findDate;
-    let endDate;
-    console.log({
-      date,
-      end_date
-    })
     return new Promise((resolve, reject) =>{
+      let findDate;
+      let endDate;
       const ids = layers.map(layer => layer.id);
       const projectLayers = ids.map(id => this.project.getLayerById(id));
       projectLayers.forEach(projectLayer => projectLayer.setChecked(true));
       const mapLayersToUpdate = ids.map(id => this.mapService.getMapLayerByLayerId(id));
+      const {multiplier, step_unit} = this.getMultiplierAndStepUnit(stepunit);
+      const findDateTimeZoneOffset = new Date(date).getTimezoneOffset();
+      findDate = moment(date).add(Math.abs(findDateTimeZoneOffset), 'minutes').toISOString();
+      endDate = moment(findDate).add(step * multiplier, step_unit).toISOString();
+      const layerEndDate = moment(end_date).add(Math.abs(findDateTimeZoneOffset), 'minutes').toISOString();
+      const isAfter = moment(endDate).isAfter(layerEndDate);
+      if (isAfter) endDate = layerEndDate;
+      const wmsParam = `${findDate}/${endDate}`;
       let mapLayersToUpdateDone = mapLayersToUpdate.length;
       mapLayersToUpdate.forEach(mapLayerToUpdate => {
         mapLayerToUpdate.once('loadend', ()=> {
@@ -132,21 +142,11 @@ function PluginService(){
           mapLayersToUpdateDone-=1;
           mapLayersToUpdateDone === 0 && reject();
         });
-      });
-      const {multiplier, step_unit} = this.getMultiplierAndStepUnit(stepunit);
-      const findDateTimeZoneOffset = new Date(date).getTimezoneOffset();
-      findDate = moment(date).add(Math.abs(findDateTimeZoneOffset), 'minutes').toISOString();
-      endDate = moment(findDate).add(step * multiplier, step_unit).toISOString();
-      const layerEndDate = moment(end_date).add(Math.abs(findDateTimeZoneOffset), 'minutes').toISOString();
-      const isAfter = moment(endDate).isAfter(layerEndDate);
-      if (isAfter) endDate = layerEndDate;
-      const wmsParam = `${findDate}/${endDate}`;
-      mapLayersToUpdate.forEach(mapLayerToUpdate => {
         this.mapService.updateMapLayer(mapLayerToUpdate, {
           force: true,
           [WMS_PARAMETER]: wmsParam
         }, UPDATE_MAPLAYER_OPTIONS);
-      })
+      });
     })
   };
 
@@ -182,14 +182,14 @@ function PluginService(){
   /**
    * Method on open time series Panel
    */
-  this.open = function(){
+  this._open = function(){
     this.state.panel.open = true;
   };
 
   /**
    * Method on close time series Panel
    */
-  this.close = function(){
+  this._close = function(){
     const layers = this.state.layers.filter(layer => layer.timed);
     layers && this.resetTimeLayer(layers, true);
     this.state.panel.open = false;
