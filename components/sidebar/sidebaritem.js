@@ -317,7 +317,7 @@ export default function Sidebaritem({service, options={}}={}){
         immediate: false
       },
       current_layers_index: {
-        immediate: true,
+        immediate: false,
         async handler(new_index_layers, old_index_layers){
         /**
          * check if try to remove selected layer
