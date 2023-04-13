@@ -11,8 +11,8 @@
           </option>
         </select>
         <div v-if="!changed_layer">
-          <datetime :label="'plugins.qtimeseries.startdate'" :format="format" :minDate="min_date" :maxDate="end_date" :type="'datetime'" :value="start_date" @change="changeStartDateTime"></datetime>
-          <datetime :label="'plugins.qtimeseries.enddate'" :format="format" :minDate="start_date" :maxDate="max_date" :type="'datetime'" :value="end_date" @change="changeEndDateTime"></datetime>
+          <datetime :label="'plugins.qtimeseries.startdate'" :format="format" :minDate="min_date" :maxDate="end_date" :type="'datetime'" :value="start_date" @change="changeStartDateTime"/>
+          <datetime :label="'plugins.qtimeseries.enddate'" :format="format" :minDate="start_date" :maxDate="max_date" :type="'datetime'" :value="end_date" @change="changeEndDateTime"/>
           <label  v-if="!change_step_unit"  v-t-plugin:pre="'qtimeseries.step'">[<span v-t-plugin="`qtimeseries.stepsunit.${current_step_unit_label}`"></span> ]</label>
           <input class="form-control" type="number" :min="range.min" :max="range.max" :step="stepunitmultiplier" v-model="step">
           <range v-disabled="range.max === range.min " label="plugins.qtimeseries.steps" :max="range.max" :value="range.value" :min="range.min" ref="rangecomponent" @change-range="changeRangeStep"></range>

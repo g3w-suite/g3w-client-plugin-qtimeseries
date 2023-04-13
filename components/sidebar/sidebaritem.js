@@ -85,6 +85,8 @@ export default function Sidebaritem({service, options={}}={}){
         if (this.select_layers.length > 1) {
           this.start_date = moment.min(this.select_layers.map(layer => layer.start_date));
           this.end_date = moment.max(this.select_layers.map(layer => layer.end_date));
+          // need to set max date as end_date
+          this.max_date = this.end_date;
         } else {
           const {start_date, end_date} = this.layers[this.current_layers_index[0]];
           this.start_date = start_date;
