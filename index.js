@@ -1,6 +1,7 @@
 import pluginConfig from './config';
 import Service from "./service";
-import SidebarItem from './components/sidebar/sidebaritem';
+import SidebarItemComponent from './components/SidebarItem.vue';
+
 const {base, inherit} = g3wsdk.core.utils;
 const Plugin = g3wsdk.core.plugin.Plugin;
 const GUI = g3wsdk.gui.GUI;
@@ -41,11 +42,8 @@ const _Plugin = function() {
   //setup plugin interface
   this.setupGui = function() {
     const service = this.getService();
-    // create an object that has a vue object structure
-    const vueComponentObject = SidebarItem({
-      service
-    });
-    this.createSideBarComponent(vueComponentObject,
+
+    this.createSideBarComponent(SidebarItemComponent,
       {
         id: pluginConfig.name,
         title: `plugins.${pluginConfig.name}.title`,
