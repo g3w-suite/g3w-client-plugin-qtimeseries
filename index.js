@@ -79,7 +79,5 @@ const _Plugin = function() {
 
 inherit(_Plugin, Plugin);
 
-(function(plugin){
-  plugin.init();
-})(new _Plugin);
+new _Plugin;
 
