@@ -7,12 +7,14 @@ const Plugin = g3wsdk.core.plugin.Plugin;
 const GUI = g3wsdk.gui.GUI;
 const addI18nPlugin = g3wsdk.core.i18n.addI18nPlugin;
 const _Plugin = function() {
-  base(this);
+  base(this, {
+    name: pluginConfig.name,
+    i18n: true,
+  });
   const pluginGroupTool = {
     position: 0,
     title: pluginConfig.title
   };
-  this.name = pluginConfig.name;
   this.panel; // plugin panel reference
   this.setReady(true);
   this.onAfterRegisterPluginKey;
@@ -21,11 +23,6 @@ const _Plugin = function() {
     this.config = this.getConfig();
     const enabled = this.registerPlugin(this.config.gid);
     this.setService(Service);
-    // add i18n of the plugin
-    addI18nPlugin({
-      name: this.name,
-      config: pluginConfig.i18n
-    });
     // check if has some condition default true
     if (this.service.loadPlugin()) {
       this.service.once('ready', show => {
