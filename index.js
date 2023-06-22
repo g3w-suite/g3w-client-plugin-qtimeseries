@@ -3,46 +3,40 @@ import Service from "./service";
 import SidebarItemComponent from './components/SidebarItem.vue';
 
 const {base, inherit} = g3wsdk.core.utils;
-const Plugin = g3wsdk.core.plugin.Plugin;
-const GUI = g3wsdk.gui.GUI;
-const addI18nPlugin = g3wsdk.core.i18n.addI18nPlugin;
+const {Plugin} = g3wsdk.core.plugin;
+const {GUI} = g3wsdk.gui;
+
 const _Plugin = function() {
-  base(this);
-  const pluginGroupTool = {
-    position: 0,
-    title: pluginConfig.title
-  };
-  this.name = pluginConfig.name;
+  base(this, {
+    name: pluginConfig.name,
+    i18n: pluginConfig.i18n,
+    service: Service
+  });
+
   this.panel; // plugin panel reference
+
   this.setReady(true);
+
   this.onAfterRegisterPluginKey;
-  this.init = function() {
-    //get config plugin from server
-    this.config = this.getConfig();
-    const enabled = this.registerPlugin(this.config.gid);
-    this.setService(Service);
-    // add i18n of the plugin
-    addI18nPlugin({
-      name: this.name,
-      config: pluginConfig.i18n
+
+  const enabled = this.registerPlugin(this.config.gid);
+  // check if it has some condition default true
+  if (this.service.loadPlugin()) {
+
+    this.service.once('ready', show => {
+      //plugin registry
+      if (enabled && show) {
+        if (!GUI.isready) GUI.on('ready', ()=> this.setupGui.bind(this));
+        else this.setupGui();
+      }
     });
-    // check if has some condition default true
-    if (this.service.loadPlugin()) {
-      this.service.once('ready', show => {
-        //plugin registry
-        if (enabled && show) {
-          if (!GUI.isready) GUI.on('ready', ()=> this.setupGui.bind(this));
-          else this.setupGui();
-        }
-      });
-      //inizialize service
-      this.service.init(this.config);
-    }
-  };
+    //inizialize service
+    this.service.init(this.config);
+  }
+
   //setup plugin interface
   this.setupGui = function() {
     const service = this.getService();
-
     this.createSideBarComponent(SidebarItemComponent,
       {
         id: pluginConfig.name,
@@ -82,7 +76,5 @@ const _Plugin = function() {
 
 inherit(_Plugin, Plugin);
 
-(function(plugin){
-  plugin.init();
-})(new _Plugin);
+new _Plugin;
 
