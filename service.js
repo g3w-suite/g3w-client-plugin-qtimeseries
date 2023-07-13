@@ -24,7 +24,8 @@ function PluginService(){
   };
 
   base(this);
-  this.init = async function(config={}) {
+
+  this.init = function(config={}) {
     this.project = this.getCurrentProject();
     this.config = config;
     this.mapService = GUI.getService('map');
