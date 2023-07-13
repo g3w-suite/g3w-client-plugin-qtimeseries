@@ -20,23 +20,15 @@ const _Plugin = function() {
   this.onAfterRegisterPluginKey;
 
   const enabled = this.registerPlugin(this.config.gid);
-  // check if it has some condition default true
-  if (this.service.loadPlugin()) {
 
-    this.service.once('ready', show => {
-      //plugin registry
-      if (enabled && show) {
-        if (!GUI.isready) GUI.on('ready', ()=> this.setupGui.bind(this));
-        else this.setupGui();
-      }
-    });
-    //inizialize service
-    this.service.init(this.config);
-  }
+  /**
+   * @since 3.6.2 Need to be move instance methods before call it
+   */
 
   //setup plugin interface
   this.setupGui = function() {
     const service = this.getService();
+    console.log('qui')
     this.createSideBarComponent(SidebarItemComponent,
       {
         id: pluginConfig.name,
@@ -72,6 +64,34 @@ const _Plugin = function() {
     this.emit('unload');
     this.service.clear();
   }
+
+
+  // check if it has some condition default true
+  if (this.service.loadPlugin()) {
+
+    this.setHookLoading({
+      loading: true
+    });
+
+    this.service.once('ready', show => {
+      //plugin registry
+      if (enabled && show) {
+        if (!GUI.isready) {
+          GUI.on('ready', ()=> this.setupGui.bind(this));
+        } else {
+          this.setupGui();
+        }
+      }
+
+      this.setHookLoading({
+        loading: false
+      });
+    });
+    //inizialize service
+    this.service.init(this.config);
+  }
+
+
 };
 
 inherit(_Plugin, Plugin);
