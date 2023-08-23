@@ -7,8 +7,12 @@
             "last 2 versions",
             "IE >= 9"
           ]
-        }
-      }]
+        },
+        "exclude": [
+          "transform-regenerator"
+        ]
+      }
+    ]
   ],
   "plugins": [
     "transform-remove-strict-mode",
