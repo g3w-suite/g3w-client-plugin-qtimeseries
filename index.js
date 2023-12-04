@@ -28,7 +28,6 @@ const _Plugin = function() {
   //setup plugin interface
   this.setupGui = function() {
     const service = this.getService();
-    console.log('qui')
     this.createSideBarComponent(SidebarItemComponent,
       {
         id: pluginConfig.name,
