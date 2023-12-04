@@ -9,8 +9,8 @@
   "dependencies": {},
   "devDependencies": {},
   "scripts": {
-    "watch": "../../../node_modules/.bin/gulp watch",
-    "build": "../../../node_modules/.bin/gulp default"
+    "watch": "gulp watch",
+    "build": "gulp default"
   },
   "repository": {
     "type": "git",
