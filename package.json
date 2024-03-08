@@ -8,10 +8,7 @@
   },
   "dependencies": {},
   "devDependencies": {},
-  "scripts": {
-    "watch": "gulp watch",
-    "build": "gulp default"
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/g3w-suite/g3w-client-plugin-qtimeseries.git"
