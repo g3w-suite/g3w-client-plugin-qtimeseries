@@ -392,7 +392,6 @@ export default {
             try {
               const step = 1*this.step;
               this.range.value = status === 1 ? this.range.value + step: this.range.value - step;
-              console.log(this.range.value)
               if (this.range.value > this.range.max || this.range.value < 0) {
                 this.resetRangeInputData();
                 this.pause();
