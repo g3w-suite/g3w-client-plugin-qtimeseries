@@ -1,13 +1,11 @@
-import {STEP_UNITS} from './constant';
-const {base, inherit, toRawType} = g3wsdk.core.utils;
-const {GUI} = g3wsdk.gui;
-const BasePluginService = g3wsdk.core.plugin.PluginService;
+import { STEP_UNITS } from './constant';
+const { base, inherit, toRawType }         = g3wsdk.core.utils;
+const { GUI }                              = g3wsdk.gui;
+const { PluginService: BasePluginService } = g3wsdk.core.plugin;
 
-const WMS_PARAMETER = 'TIME';
+const WMS_PARAMETER           = 'TIME';
 
-const UPDATE_MAPLAYER_OPTIONS = {
-  showSpinner: false
-};
+const UPDATE_MAPLAYER_OPTIONS = { showSpinner: false };
 
 /**
  * Plugin service inherit from base plugin service
@@ -15,20 +13,16 @@ const UPDATE_MAPLAYER_OPTIONS = {
  */
 function PluginService(){
   this.setters = {
-    open(){
-      this._open();
-    },
-    close(){
-      this._close()
-    }
+    open() { this._open() },
+    close() { this._close() }
   };
 
   base(this);
 
-  this.init = function(config={}) {
-    this.project = this.getCurrentProject();
-    this.config = config;
-    this.mapService = GUI.getService('map');
+  this.init = function(config = {}) {
+    this.project         = this.getCurrentProject();
+    this.config         = config;
+    this.mapService     = GUI.getService('map');
     this.getChartConfig = {
       interaction: null,
       keyListener: null,
@@ -45,22 +39,27 @@ function PluginService(){
     if (show) {
       this.state = {
         loading: false,
-        layers: this.config.layers,
-        panel: {
-          open: false
-        }
+        layers:  this.config.layers,
+        panel:   { open: false }
       };
     }
     this.emit('ready', show);
   };
   
   /**
-   * Method to add  layer from project layers configuration qtimseries
+   * Method to add layer from project layers configuration qtimseries
    */
-  this.addProjectLayerFromConfigProject = function(){
+  this.addProjectLayerFromConfigProject = function() {
     this.project.getConfigLayers().forEach(layerConfig => {
-      if (toRawType(layerConfig.qtimeseries) === 'Object') {
-        let {field, step=1, units='d', start_date=null, end_date=null} = layerConfig.qtimeseries;
+      if ('Object' === toRawType(layerConfig.qtimeseries)) {
+        let {
+          field,
+          step       = 1,
+          units      = 'd',
+          start_date = null,
+          end_date   = null,
+        } = layerConfig.qtimeseries;
+
         const startDateTimeZoneOffset = new Date(start_date).getTimezoneOffset();
         const endDateTimeZoneOffset = new Date(end_date).getTimezoneOffset();
         start_date = moment(start_date).add(startDateTimeZoneOffset, 'minutes');
@@ -97,7 +96,7 @@ function PluginService(){
    * @param date
    * @returns {Promise<unknown>}
    */
-  this.getTimeLayer = function({layers, date, step, end_date, stepunit}={}){
+  this.getTimeLayer = function({ layers, date, step, end_date, stepunit } = {} ){
     return new Promise((resolve, reject) =>{
       let findDate;
       let endDate;

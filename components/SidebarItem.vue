@@ -1,39 +1,47 @@
 <template>
-  <ul id="g3w_raster_timeseries_content" class="treeview-menu" style="position:relative; padding: 10px;color:#FFFFFF">
+  <ul
+    id     ="g3w_raster_timeseries_content"
+    class = "treeview-menu"
+    style = "position:relative; padding: 10px;color:#FFFFFF"
+  >
     <li>
       <form v-disabled="formDisabled">
         <label style="display: block">Layer</label>
           <select
-            id="timeserieslayer" class="form-control" ref="select-layers"
-            :multiple="layers.length > 0"
-            v-select2="'current_layers_index'"
-            :search="false">
+            id        = "timeserieslayer"
+            class     = "form-control"
+            ref       = "select-layers"
+            :multiple = "layers.length > 0"
+            v-select2 = "'current_layers_index'"
+            :search   = "false"
+          >
               <option
                 v-for="(layer, index) in layers"
-                :key="layer.id"
-                :value="index"
-                :selected="current_layers_index.indexOf(index.toString()) > -1">{{layer.name}}
-              </option>
+                :key      = "layer.id"
+                :value    = "index"
+                :selected = "current_layers_index.indexOf(index.toString()) > -1">
+                {{layer.name}}</option>
           </select>
+
           <div v-if="!changed_layer">
             
             <datetime
-              :label="'plugins.qtimeseries.startdate'"
-              :format="format"
-              :minDate="min_date"
-              :maxDate="end_date"
-              :type="'datetime'"
-              :value="start_date"
-              @change="changeStartDateTime"/>
+              :label   = "'plugins.qtimeseries.startdate'"
+              :format  = "format"
+              :minDate = "min_date"
+              :maxDate = "end_date"
+              :type    = "'datetime'"
+              :value   = "start_date"
+              @change  = "changeStartDateTime"/>
               
             <datetime
               :label="'plugins.qtimeseries.enddate'"
-              :format="format"
-              :minDate="start_date"
-              :maxDate="max_date"
-              :type="'datetime'"
-              :value="end_date"
-              @change="changeEndDateTime"/>
+              :format  = "format"
+              :minDate = "start_date"
+              :maxDate = "max_date"
+              :type    = "'datetime'"
+              :value   = "end_date"
+              @change  = "changeEndDateTime"/>
               
               <label
                 v-if="!change_step_unit"
@@ -43,97 +51,104 @@
               </label>
               
               <input
-                class="form-control"
-                type="number"
-                :min="range.min"
-                :max="range.max"
-                :step="stepunitmultiplier"
-                v-model="step">
+                class  = "form-control"
+                type   = "number"
+                :min   = "range.min"
+                :max   = "range.max"
+                :step  = "stepunitmultiplier"
+                v-model = "step">
               
               <range
-                v-disabled="range.max === range.min "
-                label="plugins.qtimeseries.steps"
-                :max="range.max"
-                :value="range.value"
-                :min="range.min"
-                ref="rangecomponent"
-                @change-range="changeRangeStep"/>
+                v-disabled    = "range.max === range.min "
+                label         = "plugins.qtimeseries.steps"
+                :max          = "range.max"
+                :value        = "range.value"
+                :min          = "range.min"
+                ref           = "rangecomponent"
+                @change-range = "changeRangeStep"/>
               
               <label style="display: block"></label>
               <select
-                class="form-control"
-                id="g3w-timeseries-select-unit"
-                v-select2="'current_step_unit'"
-                :search="false">
-                  
-                  <option
-                    v-for="step_unit in step_units"
-                    :key="step_unit.moment"
-                    :value="step_unit.moment"
-                    :selected="current_step_unit == step_unit.moment"
-                     v-t-plugin="`qtimeseries.stepsunit.${step_unit.label}`">
-                  </option>
+                class     = "form-control"
+                id        = "g3w-timeseries-select-unit"
+                v-select2 = "'current_step_unit'"
+                :search   = "false"
+              >
+                <option
+                  v-for      = "step_unit in step_units"
+                  :key       = "step_unit.moment"
+                  :value     = "step_unit.moment"
+                  :selected  = "current_step_unit == step_unit.moment"
+                  v-t-plugin = "`qtimeseries.stepsunit.${step_unit.label}`">
+                </option>
               </select>
           </div>
       </form>
         <div style="display: flex; justify-content: space-between; margin-top: 10px" >
           
           <button
-            class="sidebar-button skin-button btn btn-block"
-            v-disabled="!validRangeDates || range.value === 0"
-            style="margin: 2px;"
-            @click.stop="fastBackwardForward(-1)">
-              <span :class="g3wtemplate.getFontClass('fast-backward')"></span>
+            class       = "sidebar-button skin-button btn btn-block"
+            v-disabled  = "!validRangeDates || range.value === 0"
+            style       = "margin: 2px;"
+            @click.stop = "fastBackwardForward(-1)"
+          >
+            <span :class="g3wtemplate.getFontClass('fast-backward')"></span>
           </button>
           
           <button
-            class="sidebar-button skin-button btn btn-block"
-            v-disabled="!validRangeDates || range.value <= 0"
-            style="margin: 2px;"
-            @click.stop="stepBackwardForward(-1)">
-              <span :class="g3wtemplate.getFontClass('step-backward')"></span>
+            class       = "sidebar-button skin-button btn btn-block"
+            v-disabled  = "!validRangeDates || range.value <= 0"
+            style       = "margin: 2px;"
+            @click.stop = "stepBackwardForward(-1)"
+          >
+            <span :class="g3wtemplate.getFontClass('step-backward')"></span>
           </button>
           
           <button
-            class="sidebar-button skin-button btn btn-block"
-            :class="{toggled: status === -1}"
-            v-disabled="!validRangeDates || range.value <= 0"
-            style="margin: 2px; transform: rotate(180deg)"
-            @click.stop="run(-1)">
-              <span :class="g3wtemplate.getFontClass('run')"></span>
+            class       = "sidebar-button skin-button btn btn-block"
+            :class      = "{toggled: status === -1}"
+            v-disabled  = "!validRangeDates || range.value <= 0"
+            style       = "margin: 2px; transform: rotate(180deg)"
+            @click.stop = "run(-1)"
+          >
+            <span :class="g3wtemplate.getFontClass('run')"></span>
           </button>
           
           <button
-            class="sidebar-button skin-button btn btn-block"
-            :class="{toggled: status === 0}"
-            style="margin: 2px;"
-            @click.stop="pause">
-              <span :class="g3wtemplate.getFontClass('pause')"></span>
+            class       = "sidebar-button skin-button btn btn-block"
+            :class      = "{toggled: status === 0}"
+            style       = "margin: 2px;"
+            @click.stop = "pause"
+          >
+            <span :class="g3wtemplate.getFontClass('pause')"></span>
           </button>
           
           <button
-            class="sidebar-button skin-button btn btn-block"
-            :class="{toggled: status === 1}"
-            v-disabled="!validRangeDates || range.value >= range.max"
-            style="margin: 2px;"
-            @click.stop="run(1)">
-              <span :class="g3wtemplate.getFontClass('run')"></span>
+            class       = "sidebar-button skin-button btn btn-block"
+            :class      = "{toggled: status === 1}"
+            v-disabled  = "!validRangeDates || range.value >= range.max"
+            style       = "margin: 2px;"
+            @click.stop = "run(1)"
+          >
+            <span :class="g3wtemplate.getFontClass('run')"></span>
           </button>
           
           <button
-            class="sidebar-button skin-button btn btn-block"
-            v-disabled="!validRangeDates || range.value >= range.max"
-            style="margin: 2px;"
-            @click.stop="stepBackwardForward(1)">
-              <span :class="g3wtemplate.getFontClass('step-forward')"></span>
+            class       = "sidebar-button skin-button btn btn-block"
+            v-disabled  = "!validRangeDates || range.value >= range.max"
+            style       = "margin: 2px;"
+            @click.stop = "stepBackwardForward(1)"
+          >
+            <span :class="g3wtemplate.getFontClass('step-forward')"></span>
           </button>
           
           <button
             class="sidebar-button skin-button btn btn-block"
             v-disabled="!validRangeDates || range.value === range.max"
             style="margin: 2px;"
-            @click.stop="fastBackwardForward(1)">
-              <span :class="g3wtemplate.getFontClass('fast-forward')"></span>
+            @click.stop="fastBackwardForward(1)"
+          >
+            <span :class="g3wtemplate.getFontClass('fast-forward')"></span>
           </button>
           
         </div>
@@ -142,13 +157,13 @@
 </template>
 
 <script>
-import {STEP_UNITS} from "../constant";
-import PluginService from '../service';
+import { STEP_UNITS } from "../constant";
+import PluginService  from '../service';
 
 export default {
   name: "SidebarItem",
-  data(){
-    const {layers=[], panel} = PluginService.state;
+  data() {
+    const { layers=[], panel } = PluginService.state;
     return {
       layers,
       panel,
@@ -178,34 +193,34 @@ export default {
   },
   computed: {
     /**
-     * set from disable property
+     * set from disabled property
      * @returns {boolean}
      */
-    formDisabled(){
+    formDisabled() {
       return this.status !== 0;
     },
     /**
      * Array of selected layers
      * @returns {unknown[]}
      */
-    select_layers(){
+    select_layers() {
       this.changed_layer = true;
-      setTimeout(()=> this.changed_layer = false);
-      return this.current_layers_index.map(index => this.layers[index]);
+      setTimeout(() => this.changed_layer = false);
+      return this.current_layers_index.map(i => this.layers[i]);
     },
     /**
      * Property to disable run button
      * @returns {boolean|boolean}
      */
-    disablerun(){
-      return this.status === 0 && (!this.start_date || !this.end_date) ;
+    disablerun() {
+      return 0 === this.status && (!this.start_date || !this.end_date) ;
     },
     /**
      * check if dates are valid
      * @returns {boolean|boolean}
      */
-    validRangeDates(){
-      const {multiplier, step_unit} = this.getMultiplierAndStepUnit();
+    validRangeDates() {
+      const { multiplier, step_unit } = this.getMultiplierAndStepUnit();
       return this.validateStartDateEndDate() && moment(this.end_date).diff(moment(this.start_date), step_unit) / multiplier >= this.getStepValue();
     },
   },
@@ -213,55 +228,57 @@ export default {
     /**
      * Method to initialize the form time series on open and close
      */
-    initLayerTimeseries(){
-      this.status = 0;
+    initLayerTimeseries() {
+      this.status                    = 0;
       this.setDates();
-      this.min_date = this.start_date;
+      this.min_date                  = this.start_date;
       this.currentLayerDateTimeIndex = this.start_date;
-      this.range.value = 0;
-      this.range.min = 0;
+      this.range.value               = 0;
+      this.range.min                 = 0;
       this.resetRangeInputData();
-      this.currentLayerDateTimeIndex && this.getTimeLayer();
+      if (this.currentLayerDateTimeIndex) { this.getTimeLayer() }
       this.showCharts = false;
     },
-    setDates(){
+    setDates() {
       if (this.select_layers.length > 1) {
         this.start_date = moment.min(this.select_layers.map(layer => layer.start_date));
-        this.end_date = moment.max(this.select_layers.map(layer => layer.end_date));
+        this.end_date   = moment.max(this.select_layers.map(layer => layer.end_date));
         // need to set max date as end_date
-        this.max_date = this.end_date;
+        this.max_date   = this.end_date;
       } else {
-        const {start_date, end_date} = this.layers[this.current_layers_index[0]];
-        this.start_date = start_date;
-        this.end_date = end_date;
+        const { start_date, end_date } = this.layers[this.current_layers_index[0]];
+        this.start_date                = start_date;
+        this.end_date                  = end_date;
       }
     },
     /**
      * Method to reset range on change start date or end date time
      */
-    resetRangeInputData(){
+    resetRangeInputData() {
       // reset range value to 0
       this.range.value = 0;
       // set max range
-      const {multiplier, step_unit} = this.getMultiplierAndStepUnit();
-      this.range.max = this.validateStartDateEndDate() ?
-        Number.parseInt(moment(this.end_date).diff(moment(this.start_date), step_unit) / multiplier * this.stepunitmultiplier) : 0;
+      const { multiplier, step_unit } = this.getMultiplierAndStepUnit();
+      this.range.max = this.validateStartDateEndDate()
+        ? Number.parseInt(moment(this.end_date).diff(moment(this.start_date), step_unit) / multiplier * this.stepunitmultiplier)
+        : 0;
     },
     /**
      * Method call when change range input step unit
      */
-    changeRangeInputOnChangeStepUnit(){
+    changeRangeInputOnChangeStepUnit() {
       // reset range value to 0
       this.range.value = 0;
       // set max range
-      const {multiplier, step_unit} = this.getMultiplierAndStepUnit();
-      this.range.max = this.validateStartDateEndDate() ?
-        Number.parseInt(moment(this.end_date).diff(moment(this.start_date), step_unit) / multiplier * this.stepunitmultiplier) : 0;
+      const { multiplier, step_unit } = this.getMultiplierAndStepUnit();
+      this.range.max = this.validateStartDateEndDate()
+        ? Number.parseInt(moment(this.end_date).diff(moment(this.start_date), step_unit) / multiplier * this.stepunitmultiplier)
+        : 0;
     },
     /*
       Method to extract step unit and eventually multiply factor (10, 100) in case es: decade e centrury for moment purpose
      */
-    getMultiplierAndStepUnit(){
+    getMultiplierAndStepUnit() {
       return PluginService.getMultiplierAndStepUnit(this.current_step_unit);
     },
     /**
@@ -269,10 +286,10 @@ export default {
      * @param layers
      * @returns {Promise<void>}
      */
-    async resetTimeLayer(layers=this.select_layers){
+    async resetTimeLayer(layers = this.select_layers) {
       this.pause();
       await PluginService.resetTimeLayer(layers);
-      layers.forEach(layer => layer.timed = false);
+      layers.forEach(l => l.timed = false);
     },
     /**
      * Method to call server request image
@@ -282,45 +299,44 @@ export default {
       await this.$nextTick();
       try {
         await PluginService.getTimeLayer({
-          layers: this.select_layers,
-          step: this.step,
-          date: this.currentLayerDateTimeIndex,
+          layers:    this.select_layers,
+          step:      this.step,
+          date:      this.currentLayerDateTimeIndex,
           end_date : this.end_date,
-          stepunit: this.current_step_unit
+          stepunit:  this.current_step_unit
         });
-      } catch(err){
-      }
-      this.select_layers.forEach(layer => layer.timed = true);
+      } catch(e) { console.warn(e) }
+      this.select_layers.forEach(l => l.timed = true);
     },
     /**
      * In case of change step
      * @param value
      * @returns {Promise<void>}
      */
-    async changeRangeStep({value}){
+    async changeRangeStep({ value }) {
       this.range.value = 1*value;
-      const {mutltiplier, step_unit} = this.getMultiplierAndStepUnit();
-      this.currentLayerDateTimeIndex = moment(this.start_date).add(this.range.value * mutltiplier, step_unit);
+      const { mutltiplier, step_unit } = this.getMultiplierAndStepUnit();
+      this.currentLayerDateTimeIndex   = moment(this.start_date).add(this.range.value * mutltiplier, step_unit);
       await this.getTimeLayer()
     },
     /**
      * Listener method called when start date is changed
      * @param datetime
      */
-    changeStartDateTime(datetime=null){
+    changeStartDateTime(datetime=null) {
       datetime = moment(datetime).isValid() ? datetime : null;
-      this.start_date = datetime;
+      this.start_date                = datetime;
       this.currentLayerDateTimeIndex = datetime;
       this.resetRangeInputData();
-      if (moment(datetime).isValid()) this.getTimeLayer();
-      else this.resetTimeLayer();
+      if (moment(datetime).isValid()) { this.getTimeLayer() }
+      else { this.resetTimeLayer() }
     },
     /**
      * Listener Method called when end date is chanhed
      * @param datetime
      * @returns {Promise<void>}
      */
-    async changeEndDateTime(datetime){
+    async changeEndDateTime(datetime) {
       // set end_date
       this.end_date = datetime;
       // reset range input
@@ -330,44 +346,45 @@ export default {
      *
      * @returns {boolean}
      */
-    validateStartDateEndDate(){
-      let arevalidstartenddate = false;
-      if (this.start_date && this.end_date){
-        arevalidstartenddate = moment(this.start_date).isValid() &&
-          moment(this.end_date).isValid();
+    validateStartDateEndDate() {
+      if (this.start_date && this.end_date) {
+        return (
+          moment(this.start_date).isValid()
+          && moment(this.end_date).isValid()
+        )
       }
-      return arevalidstartenddate;
+      return false;
     },
     /**
      * Set current status (play, pause)
      * @param status
      */
-    setStatus(status=0){
+    setStatus(status = 0) {
       this.status = status;
     },
     /**
      *
      * @param status 1 play, -1 back
      */
-    setCurrentDateTime(status){
-      const step = 1*this.getStepValue();
-      const {multiplier, step_unit} = this.getMultiplierAndStepUnit();
-      this.currentLayerDateTimeIndex = moment(this.currentLayerDateTimeIndex)[status === 1 ? 'add' : 'subtract'](step * multiplier, step_unit);
+    setCurrentDateTime(status) {
+      const step                     = 1*this.getStepValue();
+      const { multiplier, step_unit } = this.getMultiplierAndStepUnit();
+      this.currentLayerDateTimeIndex  = moment(this.currentLayerDateTimeIndex)[1 === status ? 'add' : 'subtract'](step * multiplier, step_unit);
     },
     /**
      * Method to calculate step valued based on current input step value and possible multipliere sted (es. decde, centuries)
      * @returns {number}
      */
-    getStepValue(){
+    getStepValue() {
       return 1*this.step*this.stepunitmultiplier;
     },
     /**
      * Play method (forward or backward)
      * status: 1 (forward) -1 (backward)
      */
-    run(status){
-      if (this.status !== status) {
-        // used to wait util the image request to layers is loaded
+    run(status) {
+      if (status !== this.status) {
+        // used to wait until the image request to layers is loaded
         let waiting= false;
         clearInterval(this.intervalEventHandler);
         this.intervalEventHandler = setInterval(async ()=> {
@@ -375,6 +392,7 @@ export default {
             try {
               const step = 1*this.step;
               this.range.value = status === 1 ? this.range.value + step: this.range.value - step;
+              console.log(this.range.value)
               if (this.range.value > this.range.max || this.range.value < 0) {
                 this.resetRangeInputData();
                 this.pause();
@@ -384,21 +402,22 @@ export default {
                 waiting = true;
                 try {
                   await this.getTimeLayer();
-                } catch(err){console.log(err)}
+                } catch(e) { console.warn(e) }
                 waiting = false;
               }
-            } catch(err){
+            } catch(e) {
+              console.warn(e);
               this.pause();
             }
           }
         }, 1000);
         this.setStatus(status);
-      } else this.pause()
+      } else { this.pause() }
     },
     /**
      * Pause methods stop to run
      */
-    pause(){
+    pause() {
       clearInterval(this.intervalEventHandler);
       this.intervalEventHandler = null;
       this.setStatus();
@@ -407,32 +426,31 @@ export default {
      * Method to go step value unit forward or backward
      * @param direction
      */
-    stepBackwardForward(direction){
+    stepBackwardForward(direction) {
       const step = this.getStepValue();
-      this.range.value = direction === 1 ? this.range.value + step : this.range.value - step;
+      this.range.value = 1 === direction ? this.range.value + step : this.range.value - step;
       this.setCurrentDateTime(direction);
-      this.getTimeLayer()
+      this.getTimeLayer();
     },
     /**
      * Method to go to end (forward) or begin (backward) of date range
      * @param direction
      */
-    fastBackwardForward(direction){
-      if (direction === 1) {
-        this.range.value = this.range.max;
+    fastBackwardForward(direction) {
+      if (1 === direction) {
+        this.range.value               = this.range.max;
         this.currentLayerDateTimeIndex = this.end_date;
-        this.getTimeLayer();
       } else {
-        this.range.value = this.range.min;
+        this.range.value               = this.range.min;
         this.currentLayerDateTimeIndex = this.start_date;
-        this.getTimeLayer();
       }
+      this.getTimeLayer();
     },
     /**
      * Method to remove clear x symbol to remove
      * one layer from multiple select. Work with at least one layer
      */
-    hideSingleLayerSelectionClear(){
+    hideSingleLayerSelectionClear() {
       $(this.$refs['select-layers'])
         .siblings('.select2-container')
         .find('.select2-selection__choice__remove').hide();
@@ -442,14 +460,14 @@ export default {
     /**
      * @since v3.5 add step watch
      */
-    step(){
+    step() {
       this.getTimeLayer();
     },
     /**
      * handler when current step unit is change
      */
     current_step_unit: {
-      async handler(step_unit){
+      async handler(step_unit) {
         // set true to change
         this.change_step_unit = true;
         this.select_layers.forEach(layer => layer.options.stepunit = step_unit);
@@ -463,68 +481,65 @@ export default {
     },
     current_layers_index: {
       immediate: false,
-      async handler(new_index_layers, old_index_layers){
+      async handler(ni, oi) {
         /**
          * check if try to remove selected layer
          */
         await this.$nextTick();
-        new_index_layers.length === 1 && this.hideSingleLayerSelectionClear();
-        const previousLayers = old_index_layers.map(index => this.layers[index]);
-        this.resetTimeLayer(previousLayers);
+        if (1 === ni.length) { this.hideSingleLayerSelectionClear() };
+        await this.resetTimeLayer(oi.map(index => this.layers[index]));
         this.initLayerTimeseries();
       }
     },
     /**
-     * Listener of open close panel
+     * Listener of an open close panel
      * @param bool
      */
-    'panel.open'(bool){
-      if (bool) this.initLayerTimeseries();
-      else this.resetTimeLayer()
+    'panel.open'(bool) {
+      if (bool) { this.initLayerTimeseries() }
+      else { this.resetTimeLayer() }
     },
     /**
      * Check is range between start date and end date is valid range
      * @param bool
      */
-    validRangeDates(bool){
-      !bool && this.changeStartDateTime(this.start_date);
+    validRangeDates(bool) {
+      if (!bool)  { this.changeStartDateTime(this.start_date) }
     }
   },
   created() {
     this.intervalEventHandler = null;
   },
-  async mounted(){
+  async mounted() {
     /**
      * method to disable (add g3w-disable class) to option select
-     * for avoid to haven't no layer selected. At least need to has one layer to work with
+     * for avoiding havingn't no layer selected.
+     * At least need to have one layer to work with
      */
-    this.disabledSingleLayerClickUnSelect = ()=> {
+    this.disabledSingleLayerClickUnSelect = () => {
       setTimeout(() => {
-        if (this.select_layers.length === 1)
+        if (1 === this.select_layers.length)  {
           $('.select2-results__options li[aria-selected="true"]').addClass('g3w-disabled');
-        else $('.select2-results__options li').removeClass('g3w-disabled');
+        }
+        else { $('.select2-results__options li').removeClass('g3w-disabled') }
       })
     };
     await this.$nextTick();
     /**
      * listen one sidebar panel plugin to register event select2:open
      */
-    PluginService.onafter('open', ()=> {
+    PluginService.onafter('open', () => {
       $('#timeserieslayer').on('select2:open', this.disabledSingleLayerClickUnSelect);
     });
     /**
      * listen close sidebar plugin to unregister select2:open
      */
-    PluginService.onafter('close', ()=> {
+    PluginService.onafter('close', () => {
       $('#timeserieslayer').off('select2:open', this.disabledSingleLayerClickUnSelect);
     })
   },
-  beforeDestroy(){
+  beforeDestroy() {
     PluginService.clear();
   }
 }
 </script>
-
-<style scoped>
-
-</style>

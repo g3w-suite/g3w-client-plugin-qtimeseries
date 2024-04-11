@@ -1,15 +1,15 @@
-import pluginConfig from './config';
-import Service from "./service";
+import pluginConfig         from './config';
+import Service              from "./service";
 import SidebarItemComponent from './components/SidebarItem.vue';
 
-const {base, inherit} = g3wsdk.core.utils;
-const {Plugin} = g3wsdk.core.plugin;
-const {GUI} = g3wsdk.gui;
+const { base, inherit } = g3wsdk.core.utils;
+const { Plugin }        = g3wsdk.core.plugin;
+const { GUI }           = g3wsdk.gui;
 
 const _Plugin = function() {
   base(this, {
-    name: pluginConfig.name,
-    i18n: pluginConfig.i18n,
+    name:    pluginConfig.name,
+    i18n:    pluginConfig.i18n,
     service: Service
   });
 
@@ -30,9 +30,9 @@ const _Plugin = function() {
     const service = this.getService();
     this.createSideBarComponent(SidebarItemComponent,
       {
-        id: pluginConfig.name,
+        id:     pluginConfig.name,
         title: `plugins.${pluginConfig.name}.title`,
-        open: false,
+        open:   false,
         collapsible: true,
         closewhenshowviewportcontent: false,
         iconConfig: {
@@ -89,7 +89,6 @@ const _Plugin = function() {
     //inizialize service
     this.service.init(this.config);
   }
-
 
 };
 
