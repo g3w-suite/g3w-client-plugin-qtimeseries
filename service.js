@@ -80,7 +80,6 @@ function PluginService(){
           end_date,
           options: {
             range_max: moment(end_date).diff(moment(start_date), stepunit) - 1,
-            format,
             step, //added
             stepunit,
             stepunitmultiplier,
