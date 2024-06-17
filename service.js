@@ -1,4 +1,5 @@
 import { STEP_UNITS } from './constant';
+
 const { base, inherit, toRawType }         = g3wsdk.core.utils;
 const { GUI }                              = g3wsdk.gui;
 const { PluginService: BasePluginService } = g3wsdk.core.plugin;
