@@ -1,1 +1,1 @@
-# g3w-client-plugin-qtimeseries v3.8.0
+# g3w-client-plugin-qtimeseries v3.9.0
