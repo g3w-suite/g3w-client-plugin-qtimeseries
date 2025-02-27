@@ -1,24 +1,24 @@
 export default  {
-  title: "Time Series",
-  current_date: 'Current Date',
-  steps: 'Steps',
-  step: 'Step',
-  startdate:"Start Date",
-  enddate: "End Date",
+  title: "Часові ряди",
+  current_date: 'Поточна дата',
+  steps: 'Кроки',
+  step: 'Крок',
+  startdate:"Початкова дата",
+  enddate: "Кінцева дата",
   stepsunit: {
-    label: "Step Unit",
-    centuries: 'Centuries',
-    decades: 'Decades',
-    years: 'Years',
-    months: 'Months',
-    weeks: 'Weeks',
-    days: 'Days',
-    hours: 'Hours',
-    minutes: 'Minutes',
-    seconds: 'Seconds',
-    milliseconds: "Milliseconds"
+    label: "Одиниці виміру",
+    centuries: 'Століття',
+    decades: 'Десятиліття',
+    years: 'Роки',
+    months: 'Місяці',
+    weeks: 'Тижні',
+    days: 'Дні',
+    hours: 'Години',
+    minutes: 'Хвилини',
+    seconds: 'Секунди',
+    milliseconds: "Мілісекунди"
   },
   tooltips: {
-    showcharts: "Show Charts"
+    showcharts: "Показати діаграми"
   }
 }
