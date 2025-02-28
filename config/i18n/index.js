@@ -6,6 +6,7 @@ import fr from './fr';
 import de from './de';
 import ro from './ro';
 import pl from './pl';
+import uk from './uk';
 
 export default {
   it,
@@ -16,4 +17,5 @@ export default {
   de,
   ro,
   pl,
+  uk,
 }
